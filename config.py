@@ -24,6 +24,18 @@ class Config:
         raw_db_url = raw_db_url.replace("postgres://", "postgresql://", 1)
     if raw_db_url and "sslmode=" not in raw_db_url and any(h in raw_db_url for h in ("neon.tech", "vercel-storage.com", "supabase.co", "render.com")):
         raw_db_url += ("&" if "?" in raw_db_url else "?") + "sslmode=require"
+
+    # If raw_db_url is postgresql://, verify if psycopg2 is available; otherwise fallback to pure-python pg8000
+    if raw_db_url and raw_db_url.startswith("postgresql://"):
+        try:
+            import psycopg2  # noqa
+        except Exception:
+            try:
+                import pg8000  # noqa
+                raw_db_url = raw_db_url.replace("postgresql://", "postgresql+pg8000://", 1)
+            except Exception:
+                pass
+
     database_url = raw_db_url
 
     # Instance directory (safe fallback for serverless read-only environments like Vercel Lambda)
