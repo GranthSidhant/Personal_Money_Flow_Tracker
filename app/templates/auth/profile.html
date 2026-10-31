@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}User Profile{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0" style="max-width: 800px;">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Account Settings</h1>
+            <p class="page-subtitle">Manage your profile information and account security</p>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Profile Card -->
+        <div class="col-12">
+            <div class="card-custom">
+                <div class="d-flex align-items-center gap-3 mb-4 pb-3 border-bottom">
+                    <div class="user-avatar-btn" style="width: 56px; height: 56px; font-size: 1.5rem;">
+                        {{ current_user.name[0]|upper if current_user.name else 'U' }}
+                    </div>
+                    <div>
+                        <h4 class="fw-bold mb-0">{{ current_user.name }}</h4>
+                        <span class="text-muted small">{{ current_user.email }}</span>
+                    </div>
+                </div>
+
+                <form method="POST" action="{{ url_for('auth.profile') }}">
+                    {{ form.hidden_tag() }}
+
+                    <div class="mb-3">
+                        <label for="name" class="form-label-custom">{{ form.name.label }}</label>
+                        {{ form.name(class="form-control form-control-custom" + (" is-invalid" if form.name.errors else "")) }}
+                        {% for error in form.name.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label-custom">Email Address</label>
+                        <input type="text" class="form-control form-control-custom bg-light" value="{{ current_user.email }}" disabled>
+                        <small class="text-muted">Primary account email used for sign in.</small>
+                    </div>
+
+                    <div class="d-flex justify-content-end">
+                        {{ form.submit(class="btn btn-primary-gradient") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Security Card -->
+        <div class="col-12">
+            <div class="card-custom">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="fw-bold mb-1">Security & Password</h5>
+                        <p class="text-muted small mb-0">Keep your account secure with a strong password</p>
+                    </div>
+                    <a href="{{ url_for('auth.change_password') }}" class="btn btn-outline-secondary px-3 py-2" style="border-radius: var(--radius-md);">
+                        <i class="bi bi-shield-lock me-1"></i> Change Password
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

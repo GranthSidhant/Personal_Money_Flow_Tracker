@@ -10,7 +10,7 @@ Personal Money Flow Tracker is a responsive web application designed for persona
 
 Refer to [`UI.png`](UI.png) for the baseline interface design, featuring:
 - Responsive desktop & mobile views
-- Curated light & dark themes
+- Curated light & dark themes with instant switching
 - People & Funds management
 - Manual Bank Account tracking & reconciliation
 - Multi-source expense allocations
@@ -19,21 +19,72 @@ Refer to [`UI.png`](UI.png) for the baseline interface design, featuring:
 
 ---
 
-## 📋 Product Specifications & Architecture
+## 📋 Implementation Status
 
-Full architectural and product requirements are detailed in [`project_requirements.md`](project_requirements.md):
-- **Document Version:** 2.0 (Approved requirements baseline)
-- **Tech Stack:** Python 3, Flask, SQLAlchemy, SQLite (Dev) / PostgreSQL (Prod), Vanilla JS / Bootstrap 5, Chart.js, Leaflet, optional Gemini API
-- **Financial Integrity:** Integer paise calculations, double-entry tracking for transfers, no silent overdraws, immutable audit trail
+| Phase | Milestone | Status |
+| :--- | :--- | :--- |
+| **Phase 1** | Foundation & Authentication (App factory, Auth, User isolation, DB migrations, UI baseline) | ✅ **Completed** |
+| **Phase 2** | People, Funds, and Receipts (Bank accounts, manual tx, unclassified tx, multi-receipt funds) | ⏳ Up Next |
+| **Phase 3** | Expenses and Allocations (Multi-fund split, personal contributions, overdraw prevention) | ⏳ Pending |
+| **Phase 4** | Pocket Money and Settlements (Ledger transfers, returns, reimbursements) | ⏳ Pending |
+| **Phase 5** | Dashboard and Reports (Dynamic calculation services, charts, filters, backup/export) | ⏳ Pending |
+| **Phase 6** | Quick Voice Notes & Location (MediaRecorder, waveforms, optional geolocation) | ⏳ Pending |
+| **Phase 7** | AI Transactions Inbox (Gemini extraction, provenance, manual approval) | ⏳ Pending |
+| **Phase 8** | PWA & Offline Drafts (Service Worker, IndexedDB sync queue, conflict resolution) | ⏳ Pending |
+| **Phase 9** | Production Hardening & Deployment (PostgreSQL, Gunicorn, HTTPS, audit) | ⏳ Pending |
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Local Development Setup
 
-*(Application foundation and Phase 1 implementation in progress)*
+### 1. Prerequisites
+- Python 3.10+ (tested with Python 3.14)
+- Git
 
+### 2. Installation
 ```bash
 # Clone the repository
 git clone https://github.com/GranthSidhant/Personal_Money_Flow_Tracker.git
 cd Personal_Money_Flow_Tracker
+
+# Create and activate a virtual environment
+python -m venv venv
+# Windows (PowerShell):
+.\venv\Scripts\Activate.ps1
+# Linux/macOS:
+source venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
 ```
+
+### 3. Environment Configuration
+Copy `.env.example` to `.env`:
+```bash
+cp .env.example .env
+```
+
+### 4. Database Setup & Migrations
+```bash
+# Run database migrations to apply latest schema
+flask --app run.py db upgrade
+```
+
+### 5. Running the Application
+```bash
+python run.py
+```
+Open [http://127.0.0.1:5000](http://127.0.0.1:5000) in your browser.
+
+---
+
+## 🧪 Running Automated Tests
+
+Run the full automated test suite with pytest:
+```bash
+python -m pytest -v
+```
+All tests verify:
+- Secure password hashing and credential validation
+- Session-based authentication (login/logout/profile/password update)
+- Route protection and multi-user data isolation
