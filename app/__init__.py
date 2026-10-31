@@ -59,6 +59,17 @@ def create_app(config_name: str = None) -> Flask:
             "app_name": "Personal Money Flow Tracker",
         }
 
+    # Security headers
+    @app.after_request
+    def set_security_headers(response):
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "SAMEORIGIN"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        if app.config.get("SESSION_COOKIE_SECURE"):
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        return response
+
     # Error handlers
     @app.errorhandler(404)
     def page_not_found(e):
