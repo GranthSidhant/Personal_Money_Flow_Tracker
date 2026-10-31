@@ -180,20 +180,22 @@
                             {% endif %}
                         </div>
                         {% endif %}
-                    </div>
-
                     <!-- Footer Controls -->
                     <div class="pt-2 border-top d-flex justify-content-between align-items-center mt-3">
-                        {% if note.linked_expense %}
-                        <a href="{{ url_for('expenses.detail', expense_id=note.linked_expense.id) }}" class="text-decoration-none small text-success">
-                            <i class="bi bi-link-45deg me-1"></i> {{ note.linked_expense.title }}
-                        </a>
-                        {% else %}
-                        <!-- Link to Expense Button (Opens modal) -->
-                        <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#linkModal{{ note.id }}" style="border-radius: var(--radius-sm); font-size: 0.8rem;">
-                            <i class="bi bi-link-45deg me-1"></i> Link Expense
-                        </button>
-                        {% endif %}
+                        <div class="d-flex gap-1">
+                            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#aiModal{{ note.id }}" style="border-radius: var(--radius-sm); font-size: 0.8rem;">
+                                <i class="bi bi-robot me-1"></i> AI Extract
+                            </button>
+                            {% if note.linked_expense %}
+                            <a href="{{ url_for('expenses.detail', expense_id=note.linked_expense.id) }}" class="text-decoration-none small text-success d-flex align-items-center">
+                                <i class="bi bi-link-45deg me-1"></i> Linked
+                            </a>
+                            {% else %}
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#linkModal{{ note.id }}" style="border-radius: var(--radius-sm); font-size: 0.8rem;">
+                                <i class="bi bi-link-45deg me-1"></i> Link
+                            </button>
+                            {% endif %}
+                        </div>
 
                         <div class="d-flex gap-1">
                             {% if note.status != 'ARCHIVED' %}
@@ -237,6 +239,52 @@
                             <div class="modal-footer border-top">
                                 <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
                                 <button type="submit" class="btn btn-primary-gradient btn-sm px-3">Confirm Link</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Extraction Consent Modal -->
+            <div class="modal fade" id="aiModal{{ note.id }}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content" style="border-radius: var(--radius-lg); border: 1px solid var(--border-color);">
+                        <div class="modal-header border-bottom">
+                            <h6 class="modal-title fw-bold text-main">
+                                <i class="bi bi-robot text-primary me-1"></i> Extract Draft with AI
+                            </h6>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <form action="{{ url_for('ai_drafts.process_note', note_id=note.id) }}" method="POST">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <div class="modal-body py-3">
+                                <p class="small text-secondary mb-3">
+                                    You are about to extract structured financial items (amounts, dates, categories, people) from this note into your <strong>AI Transactions Inbox</strong>.
+                                </p>
+                                <div class="p-3 bg-light rounded-3 border mb-3">
+                                    <span class="text-muted small d-block mb-1">Note text to be analyzed:</span>
+                                    <div class="small fw-semibold text-main">"{{ note.transcript or note.text_note or note.title }}"</div>
+                                </div>
+                                {% if note.location %}
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" name="include_location" value="yes" id="locConsent{{ note.id }}">
+                                    <label class="form-check-label small text-secondary" for="locConsent{{ note.id }}">
+                                        Include location context ({{ note.location.city or 'captured coordinates' }}) for better merchant suggestion
+                                    </label>
+                                </div>
+                                {% endif %}
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" name="consent_given" value="yes" id="consentCheck{{ note.id }}" required checked>
+                                    <label class="form-check-label small fw-semibold text-main" for="consentCheck{{ note.id }}">
+                                        I consent to processing this note. I understand suggestions will remain drafts until I review and approve them.
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="modal-footer border-top">
+                                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-primary-gradient btn-sm px-3">
+                                    <i class="bi bi-lightning-charge me-1"></i> Start Extraction
+                                </button>
                             </div>
                         </form>
                     </div>
