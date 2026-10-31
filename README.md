@@ -2,7 +2,7 @@
 
 > **Every rupee has a source, every expense has an allocation, and every remaining amount has a clear owner and history.**
 
-Personal Money Flow Tracker is a responsive web application designed for personal finance and money-flow management. Unlike conventional expense trackers, it preserves the relational integrity between **People**, **Funds**, **Receipts**, **Expenses**, **Allocations**, **Bank Accounts**, **Pocket Money**, **Quick Notes**, and **AI Drafts**.
+Personal Money Flow Tracker is a responsive web application designed for personal finance and money-flow management. Unlike conventional expense trackers, it preserves the relational integrity between **People**, **Funds**, **Receipts**, **Expenses**, **Allocations**, **Bank Accounts**, **Pocket Money**, and **Quick Voice Notes**.
 
 ---
 
@@ -15,7 +15,7 @@ Refer to [`UI.png`](UI.png) for the baseline interface design, featuring:
 - Manual Bank Account tracking & reconciliation
 - Multi-source expense allocations
 - Quick Voice Notes & optional location context
-- AI-assisted transaction draft inbox
+- Direct Voice-to-Expense Linking
 - Progressive Web App (PWA) with offline draft capture & background sync
 
 ---
@@ -30,7 +30,7 @@ Refer to [`UI.png`](UI.png) for the baseline interface design, featuring:
 | **Phase 4** | Pocket Money and Settlements (Ledger transfers, returns, reimbursements, atomic double entry) | ✅ **Completed** |
 | **Phase 5** | Dashboard and Reports (Chart.js analytics, cashflow trend, Excel/CSV exports, JSON backup) | ✅ **Completed** |
 | **Phase 6** | Quick Voice Notes & Location (MediaRecorder, waveforms, authenticated audio streaming, optional location) | ✅ **Completed** |
-| **Phase 7** | AI Transactions Inbox (Gemini API & local heuristic dual-mode, structured drafts, strict approval boundary, provenance) | ✅ **Completed** |
+| **Phase 7** | Voice Expense Linking (Direct expense association, user-controlled financial ledger linking) | ✅ **Completed** |
 | **Phase 8** | PWA & Offline Drafts (Web App Manifest, Service Worker app-shell caching, IndexedDB draft queue, idempotent sync) | ✅ **Completed** |
 | **Phase 9** | Production Hardening & Deployment (PostgreSQL, Gunicorn, HTTPS, security audit, access control) | ✅ **Completed** |
 
@@ -64,7 +64,6 @@ Copy `.env.example` to `.env`:
 ```bash
 cp .env.example .env
 ```
-*(Optionally configure `GEMINI_API_KEY` for Google Gemini 1.5 Flash extraction; if left empty, the application seamlessly uses the built-in local heuristic engine with zero paid dependencies!)*
 
 ### 4. Database Setup & Migrations
 ```bash
@@ -89,7 +88,7 @@ python -m pytest -v
 ```
 
 **Results:**
-- **58 passed tests** in ~19s
+- **50 passed tests** in ~8.7s
 - 100% passing test rate
 - Test categories:
   - `test_auth.py` & `test_user_isolation.py`: Authentication, session security, password hashing, and data tenancy isolation.
@@ -99,7 +98,6 @@ python -m pytest -v
   - `test_pocket_money.py` & `test_settlements.py`: Double-entry atomic transfers, returns, and reimbursements.
   - `test_reports.py`: CSV, Excel, and user-scoped JSON backup/restore exports.
   - `test_voice_notes.py`: Audio storage isolation, authenticated playback, and Leaflet location capture.
-  - `test_ai_drafts.py`: Heuristic & Gemini extractions, strict approval boundaries, and duplicate prevention.
   - `test_sync.py`: PWA manifest, service worker, offline shell, and idempotent IndexedDB sync.
   - `test_security_production.py`: Security headers, production cookie settings, and postgres URL normalization.
 
@@ -148,6 +146,6 @@ server {
 ## 🔒 Security & Privacy Guarantees
 
 - **Integer Paise Arithmetic:** All monetary math is stored and calculated in integer paise (`₹1.00 = 100 paise`), preventing binary floating-point roundoff errors.
-- **Strict Approval Boundary:** Voice notes and AI draft extractions **never** write directly to financial ledger tables without explicit, validated user approval.
+- **Deterministic User Control:** Voice recordings are strictly user-managed audio memos that can be explicitly linked to expenses without automated modifications.
 - **Audio & Media Isolation:** Audio recordings are stored in user-isolated directories outside the static tree and served exclusively through authenticated routes checking `voice_note.user_id == current_user.id`.
 - **Zero-Paid Requirement:** The application is 100% functional locally with zero paid third-party dependencies.

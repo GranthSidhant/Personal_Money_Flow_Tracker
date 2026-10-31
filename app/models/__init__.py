@@ -12,7 +12,6 @@ from app.models.settlement import Settlement
 from app.models.pocket_money_entry import PocketMoneyEntry
 from app.models.location import Location
 from app.models.voice_note import VoiceNote
-from app.models.ai_draft import AIDraft
 
 __all__ = [
     "User",
@@ -31,5 +30,4 @@ __all__ = [
     "PocketMoneyEntry",
     "Location",
     "VoiceNote",
-    "AIDraft",
 ]
