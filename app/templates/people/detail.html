@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}{{ person.name }} - Details{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+    <div class="page-header">
+        <div>
+            <a href="{{ url_for('people.index') }}" class="text-decoration-none small text-muted mb-2 d-inline-block">
+                <i class="bi bi-arrow-left me-1"></i> Back to People & Funds
+            </a>
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white" style="width: 52px; height: 52px; background: linear-gradient(135deg, var(--primary) 0%, var(--accent-indigo) 100%); font-size: 1.4rem;">
+                    {{ person.name[0]|upper }}
+                </div>
+                <div>
+                    <h1 class="page-title mb-0">{{ person.name }}</h1>
+                    <div class="text-muted small">
+                        {% if person.relationship %}<span class="badge bg-light text-secondary border me-2">{{ person.relationship }}</span>{% endif %}
+                        {{ person.phone or '' }} {% if person.phone and person.email %}•{% endif %} {{ person.email or '' }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <a href="{{ url_for('people.edit', person_id=person.id) }}" class="btn btn-outline-secondary px-3 py-2" style="border-radius: var(--radius-md);">
+                <i class="bi bi-pencil me-1"></i> Edit
+            </a>
+            <a href="{{ url_for('funds.new', person_id=person.id) }}" class="btn btn-primary-gradient px-3 py-2">
+                <i class="bi bi-folder-plus me-1"></i> Create Fund
+            </a>
+        </div>
+    </div>
+
+    <!-- Financial Stats for this Person -->
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-sm-4">
+            <div class="stat-card">
+                <div>
+                    <div class="stat-label">Total Entrusted Received</div>
+                    <div class="stat-value text-success">{{ format_inr(summary.total_received_paise) }}</div>
+                </div>
+                <div class="stat-icon money-in">
+                    <i class="bi bi-arrow-down-left"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-4">
+            <div class="stat-card">
+                <div>
+                    <div class="stat-label">Total Spent on Behalf</div>
+                    <div class="stat-value text-danger">{{ format_inr(summary.total_spent_paise) }}</div>
+                </div>
+                <div class="stat-icon money-out">
+                    <i class="bi bi-arrow-up-right"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-4">
+            <div class="stat-card">
+                <div>
+                    <div class="stat-label">Current Remaining Balance</div>
+                    <div class="stat-value text-primary">{{ format_inr(summary.balance_paise) }}</div>
+                </div>
+                <div class="stat-icon balance">
+                    <i class="bi bi-wallet2"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Funds for this Person -->
+    <div class="card-custom mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold mb-0">Funds for {{ person.name }}</h5>
+            <a href="{{ url_for('funds.new', person_id=person.id) }}" class="text-decoration-none small fw-semibold" style="color: var(--primary);">
+                + Add Fund
+            </a>
+        </div>
+
+        {% if summary.funds %}
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr class="text-muted small">
+                        <th>Fund Title</th>
+                        <th>Status</th>
+                        <th>Receipts Count</th>
+                        <th>Total Received</th>
+                        <th>Total Spent</th>
+                        <th>Available Balance</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for f in summary.funds %}
+                    <tr>
+                        <td>
+                            <a href="{{ url_for('funds.detail', fund_id=f.fund.id) }}" class="fw-semibold text-decoration-none text-reset">
+                                {{ f.fund.title }}
+                            </a>
+                            {% if f.fund.purpose %}
+                            <div class="small text-muted text-truncate" style="max-width: 200px;">{{ f.fund.purpose }}</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge {% if f.status == 'ACTIVE' %}bg-success-subtle text-success border border-success-subtle{% else %}bg-secondary-subtle text-secondary border{% endif %}">
+                                {{ f.status }}
+                            </span>
+                        </td>
+                        <td>{{ f.receipt_count }}</td>
+                        <td class="fw-semibold text-success">{{ format_inr(f.receipts_total_paise) }}</td>
+                        <td class="fw-semibold text-danger">{{ format_inr(f.spent_total_paise) }}</td>
+                        <td class="fw-bold fs-6">{{ format_inr(f.balance_paise) }}</td>
+                        <td class="text-end">
+                            <a href="{{ url_for('funds.detail', fund_id=f.fund.id) }}" class="btn btn-sm btn-outline-primary" style="border-radius: var(--radius-sm);">
+                                View Details
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4 text-muted">
+            <p class="small mb-3">No purpose funds created for {{ person.name }} yet.</p>
+            <a href="{{ url_for('funds.new', person_id=person.id) }}" class="btn btn-sm btn-primary-gradient">
+                <i class="bi bi-folder-plus me-1"></i> Create First Fund
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

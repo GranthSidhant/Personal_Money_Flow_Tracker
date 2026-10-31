@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}Unclassified Bank Transactions{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+    <div class="page-header">
+        <div>
+            <a href="{{ url_for('bank_accounts.index') }}" class="text-decoration-none small text-muted mb-2 d-inline-block">
+                <i class="bi bi-arrow-left me-1"></i> Back to Bank Accounts
+            </a>
+            <h1 class="page-title">Unclassified Transactions Inbox</h1>
+            <p class="page-subtitle">Review bank transactions and link them to incoming receipts or expense records.</p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <a href="{{ url_for('bank_transactions.new') }}" class="btn btn-primary-gradient px-3 py-2">
+                <i class="bi bi-plus-circle me-1"></i> Add Transaction
+            </a>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="d-flex gap-2 mb-4">
+        <a href="{{ url_for('bank_transactions.unclassified') }}" class="btn btn-sm {% if not current_type %}btn-primary-gradient{% else %}btn-outline-secondary{% endif %}" style="border-radius: var(--radius-pill);">
+            All Unclassified ({{ transactions|length }})
+        </a>
+        <a href="{{ url_for('bank_transactions.unclassified', type='CREDIT') }}" class="btn btn-sm {% if current_type == 'CREDIT' %}btn-primary-gradient{% else %}btn-outline-secondary{% endif %}" style="border-radius: var(--radius-pill);">
+            Credits Only
+        </a>
+        <a href="{{ url_for('bank_transactions.unclassified', type='DEBIT') }}" class="btn btn-sm {% if current_type == 'DEBIT' %}btn-primary-gradient{% else %}btn-outline-secondary{% endif %}" style="border-radius: var(--radius-pill);">
+            Debits Only
+        </a>
+    </div>
+
+    <div class="card-custom">
+        {% if transactions %}
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr class="text-muted small">
+                        <th>Account</th>
+                        <th>Narration</th>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Amount</th>
+                        <th class="text-end" style="min-width: 250px;">Link to Record</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tx in transactions %}
+                    <tr>
+                        <td class="fw-semibold">{{ tx.bank_account.account_nickname }}</td>
+                        <td>
+                            <div class="fw-semibold">{{ tx.description }}</div>
+                            {% if tx.reference_id %}
+                            <div class="small text-muted font-monospace">{{ tx.reference_id }}</div>
+                            {% endif %}
+                        </td>
+                        <td class="small text-muted">{{ tx.transaction_at.strftime('%d %b %Y') }}</td>
+                        <td>
+                            <span class="badge {% if tx.is_credit %}bg-success-subtle text-success border border-success-subtle{% else %}bg-danger-subtle text-danger border border-danger-subtle{% endif %}">
+                                {{ tx.transaction_type }}
+                            </span>
+                        </td>
+                        <td class="fw-bold fs-6 {% if tx.is_credit %}text-success{% else %}text-danger{% endif %}">
+                            {% if tx.is_credit %}+{% else %}-{% endif %} {{ format_inr(tx.amount_paise) }}
+                        </td>
+                        <td class="text-end">
+                            {% if tx.is_credit and unlinked_receipts %}
+                            <form method="POST" action="{{ url_for('bank_transactions.link_receipt', tx_id=tx.id) }}" class="d-flex align-items-center justify-content-end gap-2">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <select name="receipt_id" class="form-select form-select-sm" style="max-width: 200px;" required>
+                                    <option value="">-- Match Receipt --</option>
+                                    {% for r in unlinked_receipts %}
+                                    <option value="{{ r.id }}">{{ r.fund.title }} ({{ format_inr(r.amount_paise) }})</option>
+                                    {% endfor %}
+                                </select>
+                                <button type="submit" class="btn btn-sm btn-outline-primary text-nowrap">Link</button>
+                            </form>
+                            {% else %}
+                            <span class="text-muted small">Ready for classification</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <div class="display-6 text-success mb-3"><i class="bi bi-check2-circle"></i></div>
+            <h5 class="fw-bold">All caught up!</h5>
+            <p class="text-muted small mb-0">No unclassified transactions waiting in your inbox.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

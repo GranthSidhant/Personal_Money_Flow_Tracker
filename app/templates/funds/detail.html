@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}{{ fund.title }} - Fund Details{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+    <div class="page-header">
+        <div>
+            <a href="{{ url_for('funds.index') }}" class="text-decoration-none small text-muted mb-2 d-inline-block">
+                <i class="bi bi-arrow-left me-1"></i> Back to Funds
+            </a>
+            <div class="d-flex align-items-center gap-3">
+                <div class="brand-icon" style="width: 48px; height: 48px; font-size: 1.3rem;">
+                    <i class="bi bi-folder2"></i>
+                </div>
+                <div>
+                    <h1 class="page-title mb-0">{{ fund.title }}</h1>
+                    <div class="text-muted small">
+                        Entrusted by 
+                        <a href="{{ url_for('people.detail', person_id=fund.person.id) }}" class="fw-semibold text-decoration-none" style="color: var(--primary);">
+                            {{ fund.person.name }}
+                        </a>
+                        • Status: <span class="badge {% if fund.status == 'ACTIVE' %}bg-success-subtle text-success border border-success-subtle{% else %}bg-secondary-subtle text-secondary border{% endif %}">{{ fund.status }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <a href="{{ url_for('funds.edit', fund_id=fund.id) }}" class="btn btn-outline-secondary px-3 py-2" style="border-radius: var(--radius-md);">
+                <i class="bi bi-pencil me-1"></i> Edit Fund
+            </a>
+            <a href="{{ url_for('receipts.new', fund_id=fund.id) }}" class="btn btn-primary-gradient px-3 py-2">
+                <i class="bi bi-plus-circle me-1"></i> Add Receipt
+            </a>
+        </div>
+    </div>
+
+    <!-- Balance Metrics Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-sm-4">
+            <div class="stat-card">
+                <div>
+                    <div class="stat-label">Total Receipts Received</div>
+                    <div class="stat-value text-success">{{ format_inr(balance_info.receipts_total_paise) }}</div>
+                    <div class="small text-muted mt-1">{{ balance_info.receipt_count }} incoming receipt{% if balance_info.receipt_count != 1 %}s{% endif %}</div>
+                </div>
+                <div class="stat-icon money-in">
+                    <i class="bi bi-arrow-down-left"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-4">
+            <div class="stat-card">
+                <div>
+                    <div class="stat-label">Total Expense Allocations</div>
+                    <div class="stat-value text-danger">{{ format_inr(balance_info.spent_total_paise) }}</div>
+                    <div class="small text-muted mt-1">Direct purchases made</div>
+                </div>
+                <div class="stat-icon money-out">
+                    <i class="bi bi-arrow-up-right"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-4">
+            <div class="stat-card">
+                <div>
+                    <div class="stat-label">Available Fund Balance</div>
+                    <div class="stat-value text-primary">{{ format_inr(balance_info.balance_paise) }}</div>
+                    <div class="small text-muted mt-1">Remaining to spend/return</div>
+                </div>
+                <div class="stat-icon balance">
+                    <i class="bi bi-wallet2"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Receipts History Table -->
+    <div class="card-custom mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h5 class="fw-bold mb-0">Incoming Receipts</h5>
+                <p class="text-muted small mb-0">Each individual transfer received into this fund is preserved separately</p>
+            </div>
+            <a href="{{ url_for('receipts.new', fund_id=fund.id) }}" class="btn btn-sm btn-outline-primary" style="border-radius: var(--radius-sm);">
+                + Add Another Receipt
+            </a>
+        </div>
+
+        {% if receipts %}
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr class="text-muted small">
+                        <th>Date & Time</th>
+                        <th>Amount</th>
+                        <th>Method</th>
+                        <th>Reference ID</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in receipts %}
+                    <tr>
+                        <td class="small">{{ r.received_at.strftime('%d %b %Y, %I:%M %p') }}</td>
+                        <td class="fw-bold text-success fs-6">{{ format_inr(r.amount_paise) }}</td>
+                        <td>
+                            <span class="badge bg-light text-secondary border">{{ r.payment_method or 'Manual' }}</span>
+                        </td>
+                        <td class="font-monospace small text-muted">{{ r.reference_id or '—' }}</td>
+                        <td class="small text-muted">{{ r.notes or '—' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4 text-muted">
+            <p class="small mb-3">No receipts recorded in this fund yet.</p>
+            <a href="{{ url_for('receipts.new', fund_id=fund.id) }}" class="btn btn-sm btn-primary-gradient">
+                <i class="bi bi-plus-circle me-1"></i> Record First Receipt
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

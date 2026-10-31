@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0" style="max-width: 650px;">
+    <div class="page-header">
+        <div>
+            <a href="{{ url_for('people.index') }}" class="text-decoration-none small text-muted mb-2 d-inline-block">
+                <i class="bi bi-arrow-left me-1"></i> Back to People
+            </a>
+            <h1 class="page-title">{{ title }}</h1>
+            <p class="page-subtitle">Add or edit person details to preserve relationship clarity</p>
+        </div>
+    </div>
+
+    <div class="card-custom">
+        <form method="POST">
+            {{ form.hidden_tag() }}
+
+            <div class="mb-3">
+                <label for="name" class="form-label-custom">{{ form.name.label }}</label>
+                {{ form.name(class="form-control form-control-custom" + (" is-invalid" if form.name.errors else "")) }}
+                {% for error in form.name.errors %}
+                    <div class="invalid-feedback d-block">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="mb-3">
+                <label for="relationship" class="form-label-custom">{{ form.relationship.label }}</label>
+                {{ form.relationship(class="form-control form-control-custom" + (" is-invalid" if form.relationship.errors else "")) }}
+                {% for error in form.relationship.errors %}
+                    <div class="invalid-feedback d-block">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="row g-3 mb-3">
+                <div class="col-sm-6">
+                    <label for="phone" class="form-label-custom">{{ form.phone.label }}</label>
+                    {{ form.phone(class="form-control form-control-custom" + (" is-invalid" if form.phone.errors else "")) }}
+                    {% for error in form.phone.errors %}
+                        <div class="invalid-feedback d-block">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                <div class="col-sm-6">
+                    <label for="email" class="form-label-custom">{{ form.email.label }}</label>
+                    {{ form.email(class="form-control form-control-custom" + (" is-invalid" if form.email.errors else "")) }}
+                    {% for error in form.email.errors %}
+                        <div class="invalid-feedback d-block">{{ error }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label for="notes" class="form-label-custom">{{ form.notes.label }}</label>
+                {{ form.notes(class="form-control form-control-custom" + (" is-invalid" if form.notes.errors else "")) }}
+                {% for error in form.notes.errors %}
+                    <div class="invalid-feedback d-block">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center">
+                <a href="{{ url_for('people.index') }}" class="text-secondary text-decoration-none small">Cancel</a>
+                {{ form.submit(class="btn btn-primary-gradient") }}
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

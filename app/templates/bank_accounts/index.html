@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block title %}Bank Accounts{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Bank Accounts</h1>
+            <p class="page-subtitle">Track your bank balances and transactions manually without connecting bank logins.</p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <a href="{{ url_for('bank_transactions.unclassified') }}" class="btn btn-outline-secondary px-3 py-2" style="border-radius: var(--radius-md);">
+                <i class="bi bi-inbox me-1"></i> Unclassified Inbox
+            </a>
+            <a href="{{ url_for('bank_transactions.new') }}" class="btn btn-outline-primary px-3 py-2" style="border-radius: var(--radius-md);">
+                <i class="bi bi-plus-circle me-1"></i> Add Transaction
+            </a>
+            <a href="{{ url_for('bank_accounts.new') }}" class="btn btn-primary-gradient px-3 py-2">
+                <i class="bi bi-bank me-1"></i> Add Bank
+            </a>
+        </div>
+    </div>
+
+    <!-- Combined Balance Banner -->
+    <div class="card-custom p-3 mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3" style="background: linear-gradient(135deg, rgba(124, 58, 237, 0.06) 0%, rgba(99, 102, 241, 0.06) 100%);">
+        <div>
+            <span class="text-muted small fw-semibold text-uppercase">Combined Manually Tracked Bank Balances</span>
+            <div class="display-6 fw-bold" style="color: var(--primary);">{{ format_inr(combined_balance) }}</div>
+        </div>
+        <div class="text-muted small">
+            <i class="bi bi-shield-check me-1 text-success"></i> 
+            Manual Ledger Tracking • Independent of Entrusted Funds
+        </div>
+    </div>
+
+    <!-- Bank Accounts Cards Row (UI.png Layout) -->
+    <h5 class="fw-bold mb-3">Your Accounts</h5>
+    <div class="row g-3 mb-5">
+        {% if summaries %}
+            {% for item in summaries %}
+            <div class="col-12 col-md-6 col-xl-4">
+                <div class="card-custom h-100 p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold" style="width: 44px; height: 44px; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
+                                <i class="bi bi-bank2"></i>
+                            </div>
+                            <div>
+                                <h5 class="fw-bold mb-0">
+                                    <a href="{{ url_for('bank_accounts.detail', account_id=item.account.id) }}" class="text-decoration-none text-reset">
+                                        {{ item.account.account_nickname }}
+                                    </a>
+                                </h5>
+                                <div class="small text-muted">{{ item.account.bank_name }} • {{ item.account.masked_identifier or '••••' }}</div>
+                            </div>
+                        </div>
+
+                        <div class="dropdown">
+                            <button class="btn btn-icon btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-three-dots"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="border-radius: var(--radius-md);">
+                                <li><a class="dropdown-item py-2" href="{{ url_for('bank_accounts.detail', account_id=item.account.id) }}"><i class="bi bi-eye me-2"></i> View Statement</a></li>
+                                <li><a class="dropdown-item py-2" href="{{ url_for('bank_transactions.new', account_id=item.account.id) }}"><i class="bi bi-plus-circle me-2"></i> Record Transaction</a></li>
+                                <li><a class="dropdown-item py-2" href="{{ url_for('bank_accounts.edit', account_id=item.account.id) }}"><i class="bi bi-pencil me-2"></i> Edit Account</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <form method="POST" action="{{ url_for('bank_accounts.archive', account_id=item.account.id) }}" onsubmit="return confirm('Archive this bank account?');">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="dropdown-item py-2 text-warning"><i class="bi bi-archive me-2"></i> Archive</button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="mt-2">
+                        <div class="display-6 fw-bold" style="color: var(--primary);">{{ format_inr(item.current_balance_paise) }}</div>
+                        <div class="text-muted small mt-1">Current Manually Tracked Balance</div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top small text-muted">
+                        <span>Credits: <strong class="text-success">{{ format_inr(item.total_credits_paise) }}</strong></span>
+                        <span>Debits: <strong class="text-danger">{{ format_inr(item.total_debits_paise) }}</strong></span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="card-custom text-center py-5">
+                    <div class="display-6 text-muted mb-3"><i class="bi bi-bank"></i></div>
+                    <h5 class="fw-bold">No bank accounts added yet</h5>
+                    <p class="text-muted small mb-4">Add your personal bank accounts to manually track account credits, debits, and transfers.</p>
+                    <a href="{{ url_for('bank_accounts.new') }}" class="btn btn-primary-gradient px-4 py-2">
+                        <i class="bi bi-bank me-1"></i> Add First Account
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Recent Bank Transactions List (UI.png Layout) -->
+    <div class="card-custom">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold mb-0">Recent Bank Transactions</h5>
+            <a href="{{ url_for('bank_transactions.new') }}" class="text-decoration-none small fw-semibold" style="color: var(--primary);">
+                + Add Transaction
+            </a>
+        </div>
+
+        {% if recent_transactions %}
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr class="text-muted small">
+                        <th>Account</th>
+                        <th>Description / Narration</th>
+                        <th>Type</th>
+                        <th>Date & Time</th>
+                        <th>Classification</th>
+                        <th class="text-end">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tx in recent_transactions %}
+                    <tr>
+                        <td class="fw-semibold">
+                            <a href="{{ url_for('bank_accounts.detail', account_id=tx.bank_account.id) }}" class="text-decoration-none text-reset">
+                                {{ tx.bank_account.account_nickname }}
+                            </a>
+                        </td>
+                        <td>
+                            <div class="fw-semibold">{{ tx.description }}</div>
+                            {% if tx.reference_id %}
+                            <div class="small text-muted font-monospace">{{ tx.reference_id }}</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge {% if tx.is_credit %}bg-success-subtle text-success border border-success-subtle{% elif tx.is_debit %}bg-danger-subtle text-danger border border-danger-subtle{% else %}bg-secondary-subtle text-secondary border{% endif %}">
+                                {{ tx.transaction_type }}
+                            </span>
+                        </td>
+                        <td class="small text-muted">{{ tx.transaction_at.strftime('%d %b %Y, %I:%M %p') }}</td>
+                        <td>
+                            {% if tx.classification_status == 'CLASSIFIED' %}
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                                <i class="bi bi-link-45deg me-1"></i> Linked
+                            </span>
+                            {% else %}
+                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle">
+                                <i class="bi bi-question-circle me-1"></i> Unclassified
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end fw-bold fs-6 {% if tx.is_credit %}text-success{% else %}text-danger{% endif %}">
+                            {% if tx.is_credit %}+{% else %}-{% endif %} {{ format_inr(tx.amount_paise) }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4 text-muted small">
+            No bank transactions recorded yet.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

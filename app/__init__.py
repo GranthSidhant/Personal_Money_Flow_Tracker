@@ -23,9 +23,19 @@ def create_app(config_name: str = None) -> Flask:
     # Register blueprints
     from app.routes.auth import auth_bp
     from app.routes.dashboard import dashboard_bp
+    from app.routes.people import people_bp
+    from app.routes.funds import funds_bp
+    from app.routes.receipts import receipts_bp
+    from app.routes.bank_accounts import bank_accounts_bp
+    from app.routes.bank_transactions import bank_transactions_bp
     
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
+    app.register_blueprint(people_bp)
+    app.register_blueprint(funds_bp)
+    app.register_blueprint(receipts_bp)
+    app.register_blueprint(bank_accounts_bp)
+    app.register_blueprint(bank_transactions_bp)
 
     # Context processors for templates
     @app.context_processor

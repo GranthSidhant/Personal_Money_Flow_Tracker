@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block title %}{{ account.account_nickname }} - Bank Statement{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+    <div class="page-header">
+        <div>
+            <a href="{{ url_for('bank_accounts.index') }}" class="text-decoration-none small text-muted mb-2 d-inline-block">
+                <i class="bi bi-arrow-left me-1"></i> Back to Bank Accounts
+            </a>
+            <div class="d-flex align-items-center gap-3">
+                <div class="brand-icon" style="width: 48px; height: 48px; font-size: 1.3rem;">
+                    <i class="bi bi-bank"></i>
+                </div>
+                <div>
+                    <h1 class="page-title mb-0">{{ account.account_nickname }}</h1>
+                    <div class="text-muted small">
+                        {{ account.bank_name }} • {{ account.masked_identifier or '••••' }} • <span class="badge bg-light text-secondary border">{{ account.account_type }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <a href="{{ url_for('bank_accounts.edit', account_id=account.id) }}" class="btn btn-outline-secondary px-3 py-2" style="border-radius: var(--radius-md);">
+                <i class="bi bi-pencil me-1"></i> Edit Account
+            </a>
+            <a href="{{ url_for('bank_transactions.new', account_id=account.id) }}" class="btn btn-primary-gradient px-3 py-2">
+                <i class="bi bi-plus-circle me-1"></i> Record Transaction
+            </a>
+        </div>
+    </div>
+
+    <!-- Balance Metrics Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-sm-3">
+            <div class="stat-card">
+                <div>
+                    <div class="stat-label">Opening Balance</div>
+                    <div class="stat-value">{{ format_inr(balance_info.opening_balance_paise) }}</div>
+                    <div class="small text-muted mt-1">As of {{ account.opening_balance_date.strftime('%d %b %Y') }}</div>
+                </div>
+                <div class="stat-icon balance">
+                    <i class="bi bi-calendar-check"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-3">
+            <div class="stat-card">
+                <div>
+                    <div class="stat-label">Total Credits</div>
+                    <div class="stat-value text-success">{{ format_inr(balance_info.total_credits_paise) }}</div>
+                    <div class="small text-muted mt-1">Incoming deposits/transfers</div>
+                </div>
+                <div class="stat-icon money-in">
+                    <i class="bi bi-arrow-down-left"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-3">
+            <div class="stat-card">
+                <div>
+                    <div class="stat-label">Total Debits</div>
+                    <div class="stat-value text-danger">{{ format_inr(balance_info.total_debits_paise) }}</div>
+                    <div class="small text-muted mt-1">Outflow and purchases</div>
+                </div>
+                <div class="stat-icon money-out">
+                    <i class="bi bi-arrow-up-right"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-3">
+            <div class="stat-card">
+                <div>
+                    <div class="stat-label">Manually Tracked Balance</div>
+                    <div class="stat-value text-primary">{{ format_inr(balance_info.current_balance_paise) }}</div>
+                    <div class="small text-muted mt-1">Calculated current total</div>
+                </div>
+                <div class="stat-icon pocket">
+                    <i class="bi bi-wallet2"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transactions Statement Table -->
+    <div class="card-custom mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold mb-0">Transaction Statement</h5>
+            <a href="{{ url_for('bank_transactions.new', account_id=account.id) }}" class="btn btn-sm btn-outline-primary" style="border-radius: var(--radius-sm);">
+                + Record Entry
+            </a>
+        </div>
+
+        {% if transactions %}
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr class="text-muted small">
+                        <th>Date & Time</th>
+                        <th>Description / Narration</th>
+                        <th>Type</th>
+                        <th>Associated Person</th>
+                        <th>Link Status</th>
+                        <th class="text-end">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tx in transactions %}
+                    <tr>
+                        <td class="small">{{ tx.transaction_at.strftime('%d %b %Y, %I:%M %p') }}</td>
+                        <td>
+                            <div class="fw-semibold">{{ tx.description }}</div>
+                            {% if tx.reference_id %}
+                            <div class="small text-muted font-monospace">{{ tx.reference_id }}</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge {% if tx.is_credit %}bg-success-subtle text-success border border-success-subtle{% elif tx.is_debit %}bg-danger-subtle text-danger border border-danger-subtle{% else %}bg-secondary-subtle text-secondary border{% endif %}">
+                                {{ tx.transaction_type }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if tx.person %}
+                            <a href="{{ url_for('people.detail', person_id=tx.person.id) }}" class="small fw-semibold text-decoration-none">
+                                {{ tx.person.name }}
+                            </a>
+                            {% else %}
+                            <span class="text-muted small">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if tx.linked_receipt %}
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle" title="Linked to Receipt #{{ tx.linked_receipt.id }}">
+                                <i class="bi bi-link-45deg me-1"></i> Receipt #{{ tx.linked_receipt.id }}
+                            </span>
+                            {% else %}
+                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle">
+                                Unclassified
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end fw-bold fs-6 {% if tx.is_credit %}text-success{% else %}text-danger{% endif %}">
+                            {% if tx.is_credit %}+{% else %}-{% endif %} {{ format_inr(tx.amount_paise) }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4 text-muted small">
+            No transactions entered for this account yet.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}All Purpose Funds{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Purpose Funds</h1>
+            <p class="page-subtitle">Track purpose-based pools of money entrusted by each person</p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <a href="{{ url_for('receipts.new') }}" class="btn btn-outline-primary px-3 py-2" style="border-radius: var(--radius-md);">
+                <i class="bi bi-plus-circle me-1"></i> Receive Money
+            </a>
+            <a href="{{ url_for('funds.new') }}" class="btn btn-primary-gradient px-3 py-2">
+                <i class="bi bi-folder-plus me-1"></i> Create New Fund
+            </a>
+        </div>
+    </div>
+
+    <!-- Funds Grid -->
+    <div class="row g-3">
+        {% if funds %}
+            {% for item in funds %}
+            <div class="col-12 col-md-6 col-xl-4">
+                <div class="card-custom h-100 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                                <span class="badge bg-light text-secondary border mb-1">
+                                    <i class="bi bi-person me-1"></i> {{ item.fund.person.name }}
+                                </span>
+                                <h5 class="fw-bold mb-1">
+                                    <a href="{{ url_for('funds.detail', fund_id=item.fund.id) }}" class="text-decoration-none text-reset">
+                                        {{ item.fund.title }}
+                                    </a>
+                                </h5>
+                            </div>
+                            <span class="badge {% if item.status == 'ACTIVE' %}bg-success-subtle text-success border border-success-subtle{% else %}bg-secondary-subtle text-secondary border{% endif %}">
+                                {{ item.status }}
+                            </span>
+                        </div>
+
+                        {% if item.fund.purpose %}
+                        <p class="small text-muted mb-3">{{ item.fund.purpose }}</p>
+                        {% endif %}
+
+                        <div class="p-3 rounded-3 mb-3" style="background: var(--bg-page); border: 1px solid var(--border-color);">
+                            <div class="d-flex justify-content-between small text-muted mb-1">
+                                <span>Total Received ({{ item.receipt_count }} receipts):</span>
+                                <span class="fw-semibold text-success">{{ format_inr(item.receipts_total_paise) }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between small text-muted mb-2">
+                                <span>Total Spent:</span>
+                                <span class="fw-semibold text-danger">{{ format_inr(item.spent_total_paise) }}</span>
+                            </div>
+                            <hr class="my-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="fw-semibold">Available Balance:</span>
+                                <span class="fw-bold fs-5 text-success">{{ format_inr(item.balance_paise) }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                        <a href="{{ url_for('receipts.new', fund_id=item.fund.id) }}" class="small fw-semibold text-decoration-none" style="color: var(--primary);">
+                            + Add Receipt
+                        </a>
+                        <a href="{{ url_for('funds.detail', fund_id=item.fund.id) }}" class="btn btn-sm btn-outline-secondary" style="border-radius: var(--radius-sm);">
+                            View Details <i class="bi bi-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="card-custom text-center py-5">
+                    <div class="display-6 text-muted mb-3"><i class="bi bi-folder2-open"></i></div>
+                    <h5 class="fw-bold">No funds created yet</h5>
+                    <p class="text-muted small mb-4">Create purpose-based funds to track money received for specific goals (e.g. Groceries, Supplies, Trips).</p>
+                    <a href="{{ url_for('funds.new') }}" class="btn btn-primary-gradient px-4 py-2">
+                        <i class="bi bi-folder-plus me-1"></i> Create First Fund
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

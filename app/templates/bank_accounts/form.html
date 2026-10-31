@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0" style="max-width: 650px;">
+    <div class="page-header">
+        <div>
+            <a href="{{ url_for('bank_accounts.index') }}" class="text-decoration-none small text-muted mb-2 d-inline-block">
+                <i class="bi bi-arrow-left me-1"></i> Back to Bank Accounts
+            </a>
+            <h1 class="page-title">{{ title }}</h1>
+            <p class="page-subtitle">Add or edit bank account details for manual tracking</p>
+        </div>
+    </div>
+
+    <div class="card-custom">
+        <form method="POST">
+            {{ form.hidden_tag() }}
+
+            <div class="row g-3 mb-3">
+                <div class="col-sm-6">
+                    <label for="account_nickname" class="form-label-custom">{{ form.account_nickname.label }} *</label>
+                    {{ form.account_nickname(class="form-control form-control-custom" + (" is-invalid" if form.account_nickname.errors else "")) }}
+                    {% for error in form.account_nickname.errors %}
+                        <div class="invalid-feedback d-block">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                <div class="col-sm-6">
+                    <label for="bank_name" class="form-label-custom">{{ form.bank_name.label }} *</label>
+                    {{ form.bank_name(class="form-control form-control-custom" + (" is-invalid" if form.bank_name.errors else "")) }}
+                    {% for error in form.bank_name.errors %}
+                        <div class="invalid-feedback d-block">{{ error }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+                <div class="col-sm-6">
+                    <label for="account_type" class="form-label-custom">{{ form.account_type.label }}</label>
+                    {{ form.account_type(class="form-select form-control-custom") }}
+                </div>
+                <div class="col-sm-6">
+                    <label for="masked_identifier" class="form-label-custom">{{ form.masked_identifier.label }}</label>
+                    {{ form.masked_identifier(class="form-control form-control-custom") }}
+                    <small class="text-muted">For your visual reference only. Never enter full account numbers.</small>
+                </div>
+            </div>
+
+            {% if not account %}
+            <div class="row g-3 mb-3 p-3 rounded-3" style="background: var(--bg-page); border: 1px solid var(--border-color);">
+                <div class="col-sm-6">
+                    <label for="opening_balance" class="form-label-custom">{{ form.opening_balance.label }} *</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0">₹</span>
+                        {{ form.opening_balance(class="form-control form-control-custom border-start-0") }}
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <label for="opening_balance_date" class="form-label-custom">{{ form.opening_balance_date.label }} *</label>
+                    {{ form.opening_balance_date(class="form-control form-control-custom") }}
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="mb-4">
+                <label for="notes" class="form-label-custom">{{ form.notes.label }}</label>
+                {{ form.notes(class="form-control form-control-custom") }}
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center">
+                <a href="{{ url_for('bank_accounts.index') }}" class="text-secondary text-decoration-none small">Cancel</a>
+                {{ form.submit(class="btn btn-primary-gradient px-4 py-2") }}
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -38,7 +38,7 @@
                     <i class="bi bi-grid-1x2"></i>
                     <span>Dashboard</span>
                 </a>
-                <a href="#people-funds" class="nav-item-link">
+                <a href="{{ url_for('people.index') }}" class="nav-item-link {% if request.blueprint in ['people', 'funds', 'receipts'] %}active{% endif %}">
                     <i class="bi bi-people"></i>
                     <span>People & Funds</span>
                 </a>
@@ -46,7 +46,7 @@
                     <i class="bi bi-arrow-left-right"></i>
                     <span>Transactions</span>
                 </a>
-                <a href="#bank-accounts" class="nav-item-link">
+                <a href="{{ url_for('bank_accounts.index') }}" class="nav-item-link {% if request.blueprint in ['bank_accounts', 'bank_transactions'] %}active{% endif %}">
                     <i class="bi bi-bank"></i>
                     <span>Bank Accounts</span>
                 </a>
@@ -148,16 +148,16 @@
             <i class="bi bi-grid-1x2"></i>
             <span>Home</span>
         </a>
-        <a href="#people-funds" class="mobile-nav-item">
+        <a href="{{ url_for('people.index') }}" class="mobile-nav-item {% if request.blueprint in ['people', 'funds'] %}active{% endif %}">
             <i class="bi bi-people"></i>
             <span>People</span>
         </a>
-        <a href="#add-transaction" class="mobile-nav-item">
+        <a href="{{ url_for('receipts.new') }}" class="mobile-nav-item" title="Add Receipt">
             <div class="mobile-nav-add-btn">
                 <i class="bi bi-plus-lg"></i>
             </div>
         </a>
-        <a href="#bank-accounts" class="mobile-nav-item">
+        <a href="{{ url_for('bank_accounts.index') }}" class="mobile-nav-item {% if request.blueprint in ['bank_accounts', 'bank_transactions'] %}active{% endif %}">
             <i class="bi bi-bank"></i>
             <span>Banks</span>
         </a>

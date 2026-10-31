@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Receive Money - Incoming Receipt{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0" style="max-width: 700px;">
+    <div class="page-header">
+        <div>
+            <a href="{{ url_for('people.index') }}" class="text-decoration-none small text-muted mb-2 d-inline-block">
+                <i class="bi bi-arrow-left me-1"></i> Back to People & Funds
+            </a>
+            <h1 class="page-title">Receive Money</h1>
+            <p class="page-subtitle">Record money entrusted to you with clear ownership and purpose</p>
+        </div>
+    </div>
+
+    <div class="card-custom">
+        <form method="POST">
+            {{ form.hidden_tag() }}
+
+            <!-- Mode selection: New Fund vs Existing Fund -->
+            <div class="mb-4 p-3 rounded-3" style="background: var(--bg-page); border: 1px solid var(--border-color);">
+                <label class="form-label-custom fw-bold mb-2">Fund Allocation</label>
+                <div class="d-flex gap-4">
+                    {% for subfield in form.mode %}
+                    <div class="form-check">
+                        {{ subfield(class="form-check-input", id=subfield.id) }}
+                        <label class="form-check-label fw-semibold" for="{{ subfield.id }}">
+                            {{ subfield.label.text }}
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Container for New Fund Mode -->
+            <div id="new-fund-fields" class="mb-3">
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <label for="person_id" class="form-label-custom">{{ form.person_id.label }}</label>
+                        {{ form.person_id(class="form-select form-control-custom") }}
+                    </div>
+                    <div class="col-sm-6">
+                        <label for="new_fund_title" class="form-label-custom">{{ form.new_fund_title.label }}</label>
+                        {{ form.new_fund_title(class="form-control form-control-custom") }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Container for Existing Fund Mode -->
+            <div id="existing-fund-fields" class="mb-3" style="display: none;">
+                <label for="existing_fund_id" class="form-label-custom">{{ form.existing_fund_id.label }}</label>
+                {{ form.existing_fund_id(class="form-select form-control-custom") }}
+            </div>
+
+            <hr class="my-4">
+
+            <!-- Receipt Financial Details -->
+            <div class="row g-3 mb-3">
+                <div class="col-sm-6">
+                    <label for="amount" class="form-label-custom">{{ form.amount.label }} *</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0">₹</span>
+                        {{ form.amount(class="form-control form-control-custom border-start-0" + (" is-invalid" if form.amount.errors else "")) }}
+                    </div>
+                    {% for error in form.amount.errors %}
+                        <div class="invalid-feedback d-block">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="col-sm-6">
+                    <label for="received_at" class="form-label-custom">{{ form.received_at.label }} *</label>
+                    {{ form.received_at(class="form-control form-control-custom" + (" is-invalid" if form.received_at.errors else "")) }}
+                    {% for error in form.received_at.errors %}
+                        <div class="invalid-feedback d-block">{{ error }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+                <div class="col-sm-6">
+                    <label for="payment_method" class="form-label-custom">{{ form.payment_method.label }}</label>
+                    {{ form.payment_method(class="form-select form-control-custom") }}
+                </div>
+                <div class="col-sm-6">
+                    <label for="reference_id" class="form-label-custom">{{ form.reference_id.label }}</label>
+                    {{ form.reference_id(class="form-control form-control-custom") }}
+                </div>
+            </div>
+
+            <!-- Deposit to Bank Account (Optional atomic linking) -->
+            <div class="mb-3 p-3 rounded-3" style="background: var(--bg-page); border: 1px solid var(--border-color);">
+                <label for="bank_account_id" class="form-label-custom">
+                    <i class="bi bi-bank me-1"></i> {{ form.bank_account_id.label }}
+                </label>
+                {{ form.bank_account_id(class="form-select form-control-custom") }}
+                <small class="text-muted d-block mt-1">If selected, this also creates a linked bank credit in your manual bank account tracker.</small>
+            </div>
+
+            <div class="mb-4">
+                <label for="notes" class="form-label-custom">{{ form.notes.label }}</label>
+                {{ form.notes(class="form-control form-control-custom") }}
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center">
+                <a href="{{ url_for('people.index') }}" class="text-secondary text-decoration-none small">Cancel</a>
+                {{ form.submit(class="btn btn-primary-gradient px-4 py-2") }}
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const modeRadios = document.querySelectorAll('input[name="mode"]');
+        const newFundFields = document.getElementById('new-fund-fields');
+        const existingFundFields = document.getElementById('existing-fund-fields');
+
+        function updateFundMode() {
+            let selectedMode = "new_fund";
+            modeRadios.forEach(radio => {
+                if (radio.checked) selectedMode = radio.value;
+            });
+
+            if (selectedMode === "new_fund") {
+                newFundFields.style.display = "block";
+                existingFundFields.style.display = "none";
+            } else {
+                newFundFields.style.display = "none";
+                existingFundFields.style.display = "block";
+            }
+        }
+
+        modeRadios.forEach(radio => radio.addEventListener('change', updateFundMode));
+        updateFundMode();
+    });
+</script>
+{% endblock %}

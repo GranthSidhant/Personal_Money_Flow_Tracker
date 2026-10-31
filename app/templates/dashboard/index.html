@@ -38,7 +38,7 @@
             <div class="stat-card">
                 <div>
                     <div class="stat-label">Total Money In</div>
-                    <div class="stat-value text-success" id="stat-money-in">₹24,500</div>
+                    <div class="stat-value text-success" id="stat-money-in">{{ format_inr(total_money_in) }}</div>
                 </div>
                 <div class="stat-icon money-in">
                     <i class="bi bi-arrow-down-left"></i>
@@ -51,7 +51,7 @@
             <div class="stat-card">
                 <div>
                     <div class="stat-label">Total Spent</div>
-                    <div class="stat-value text-danger" id="stat-money-out">₹18,260</div>
+                    <div class="stat-value text-danger" id="stat-money-out">{{ format_inr(total_spent) }}</div>
                 </div>
                 <div class="stat-icon money-out">
                     <i class="bi bi-arrow-up-right"></i>
@@ -64,7 +64,7 @@
             <div class="stat-card">
                 <div>
                     <div class="stat-label">Current Balance</div>
-                    <div class="stat-value" id="stat-balance" style="color: var(--accent-indigo);">₹6,240</div>
+                    <div class="stat-value" id="stat-balance" style="color: var(--accent-indigo);">{{ format_inr(current_balance) }}</div>
                 </div>
                 <div class="stat-icon balance">
                     <i class="bi bi-wallet2"></i>
@@ -77,7 +77,7 @@
             <div class="stat-card">
                 <div>
                     <div class="stat-label">Pocket Money</div>
-                    <div class="stat-value" id="stat-pocket" style="color: var(--pocket-money);">₹3,750</div>
+                    <div class="stat-value" id="stat-pocket" style="color: var(--pocket-money);">{{ format_inr(pocket_money) }}</div>
                 </div>
                 <div class="stat-icon pocket">
                     <i class="bi bi-cash-stack"></i>
@@ -94,57 +94,35 @@
             <div class="card-custom mb-4">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5 class="fw-bold mb-0">Fund Summary</h5>
-                    <a href="#people-funds" class="text-decoration-none small fw-semibold" style="color: var(--primary);">View All <i class="bi bi-arrow-right"></i></a>
+                    <a href="{{ url_for('people.index') }}" class="text-decoration-none small fw-semibold" style="color: var(--primary);">View All <i class="bi bi-arrow-right"></i></a>
                 </div>
 
                 <div class="d-flex flex-column gap-3">
-                    <!-- Mother Fund Item -->
-                    <div class="d-flex align-items-center justify-content-between p-3 rounded-3" style="background: var(--bg-page); border: 1px solid var(--border-color);">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; background: rgba(236, 72, 153, 0.15); color: #ec4899;">
-                                <i class="bi bi-person-fill"></i>
+                    {% if people_summaries %}
+                        {% for ps in people_summaries[:3] %}
+                        <div class="d-flex align-items-center justify-content-between p-3 rounded-3" style="background: var(--bg-page); border: 1px solid var(--border-color);">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white" style="width: 40px; height: 40px; background: linear-gradient(135deg, var(--primary) 0%, var(--accent-indigo) 100%);">
+                                    {{ ps.person.name[0]|upper }}
+                                </div>
+                                <div>
+                                    <a href="{{ url_for('people.detail', person_id=ps.person.id) }}" class="fw-semibold text-decoration-none text-reset">
+                                        {{ ps.person.name }}
+                                    </a>
+                                    <div class="small text-muted">{{ format_inr(ps.total_received_paise) }} received • Spent: {{ format_inr(ps.total_spent_paise) }}</div>
+                                </div>
                             </div>
-                            <div>
-                                <div class="fw-semibold">Mother</div>
-                                <div class="small text-muted">₹5,000 received • Spent: ₹3,500</div>
-                            </div>
-                        </div>
-                        <div class="text-end">
-                            <div class="fw-bold text-success">Bal: ₹1,500</div>
-                        </div>
-                    </div>
-
-                    <!-- Father Fund Item -->
-                    <div class="d-flex align-items-center justify-content-between p-3 rounded-3" style="background: var(--bg-page); border: 1px solid var(--border-color);">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; background: rgba(59, 130, 246, 0.15); color: #3b82f6;">
-                                <i class="bi bi-person-fill"></i>
-                            </div>
-                            <div>
-                                <div class="fw-semibold">Father</div>
-                                <div class="small text-muted">₹2,000 received • Spent: ₹1,500</div>
+                            <div class="text-end">
+                                <div class="fw-bold text-success">Bal: {{ format_inr(ps.balance_paise) }}</div>
                             </div>
                         </div>
-                        <div class="text-end">
-                            <div class="fw-bold text-success">Bal: ₹500</div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4 text-muted small">
+                            <p class="mb-2">No people or funds added yet.</p>
+                            <a href="{{ url_for('receipts.new') }}" class="btn btn-sm btn-primary-gradient">+ Receive First Money</a>
                         </div>
-                    </div>
-
-                    <!-- Pocket Money Item -->
-                    <div class="d-flex align-items-center justify-content-between p-3 rounded-3" style="background: var(--bg-page); border: 1px solid var(--border-color);">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; background: var(--pocket-money-bg); color: var(--pocket-money);">
-                                <i class="bi bi-piggy-bank-fill"></i>
-                            </div>
-                            <div>
-                                <div class="fw-semibold">My Pocket Money</div>
-                                <div class="small text-muted">Transfers from verified funds</div>
-                            </div>
-                        </div>
-                        <div class="text-end">
-                            <div class="fw-bold" style="color: var(--pocket-money);">₹3,750</div>
-                        </div>
-                    </div>
+                    {% endif %}
                 </div>
             </div>
 
@@ -247,24 +225,24 @@
                 <h5 class="fw-bold mb-3">Quick Actions</h5>
                 <div class="row g-3">
                     <div class="col-12 col-sm-6">
-                        <button class="btn-action-card w-100 justify-content-center" type="button">
+                        <a href="{{ url_for('receipts.new') }}" class="btn-action-card w-100 justify-content-center text-decoration-none">
                             <i class="bi bi-plus-circle"></i> Add Money In
-                        </button>
+                        </a>
                     </div>
                     <div class="col-12 col-sm-6">
-                        <button class="btn-action-card w-100 justify-content-center" type="button">
+                        <a href="#add-expense" class="btn-action-card w-100 justify-content-center text-decoration-none">
                             <i class="bi bi-dash-circle"></i> Add Expense
-                        </button>
+                        </a>
                     </div>
                     <div class="col-12 col-sm-6">
-                        <button class="btn-action-card w-100 justify-content-center" type="button">
-                            <i class="bi bi-arrow-left-right"></i> Transfer to Pocket
-                        </button>
+                        <a href="{{ url_for('bank_transactions.new') }}" class="btn-action-card w-100 justify-content-center text-decoration-none">
+                            <i class="bi bi-arrow-left-right"></i> Bank Transaction
+                        </a>
                     </div>
                     <div class="col-12 col-sm-6">
-                        <button class="btn-action-card w-100 justify-content-center" type="button">
+                        <a href="#voice-notes" class="btn-action-card w-100 justify-content-center text-decoration-none">
                             <i class="bi bi-mic"></i> Record Voice Note
-                        </button>
+                        </a>
                     </div>
                 </div>
             </div>
