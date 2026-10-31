@@ -3,9 +3,11 @@ from flask_login import login_required, current_user
 from sqlalchemy import func
 from app.extensions import db
 from app.models.receipt import Receipt
+from app.models.expense import Expense
 from app.models.bank_transaction import BankTransaction
 from app.services.balance_service import get_all_people_summaries, get_total_entrusted_balance
 from app.services.bank_balance_service import get_all_bank_accounts_summary, get_combined_bank_balances
+from app.services.allocation_service import get_spending_by_category
 
 dashboard_bp = Blueprint("dashboard", __name__)
 
@@ -21,20 +23,41 @@ def index():
         .scalar()
     )
 
+    total_spent_paise = (
+        db.session.query(func.coalesce(func.sum(Expense.total_amount_paise), 0))
+        .filter(Expense.user_id == current_user.id)
+        .scalar()
+    )
+
     current_entrusted_paise = get_total_entrusted_balance(current_user.id)
     combined_bank_paise = get_combined_bank_balances(current_user.id)
     people_summaries = get_all_people_summaries(current_user.id)
+    category_breakdown = get_spending_by_category(current_user.id)
 
-    # In Phase 2: total spent and pocket money will dynamically expand in Phase 3 & 4
-    total_spent_paise = 0
+    # In Phase 3: Pocket money is computed from transfers & personal contributions (expanded in Phase 4)
     pocket_money_paise = 0
 
-    recent_receipts = (
-        Receipt.query.filter_by(user_id=current_user.id)
-        .order_by(Receipt.received_at.desc())
-        .limit(5)
-        .all()
-    )
+    # Recent activity items for Dashboard
+    recent_expenses = Expense.query.filter_by(user_id=current_user.id).order_by(Expense.expense_at.desc()).limit(3).all()
+    recent_receipts = Receipt.query.filter_by(user_id=current_user.id).order_by(Receipt.received_at.desc()).limit(3).all()
+
+    recent_activity = []
+    for exp in recent_expenses:
+        linked_sources = [a.fund.person.name if a.fund and a.fund.person else "Pocket Money" for a in exp.allocations]
+        recent_activity.append({
+            "title": f"{exp.title} ({', '.join(set(linked_sources))})",
+            "date": exp.expense_at,
+            "type": "EXPENSE",
+            "amount_paise": exp.total_amount_paise,
+        })
+    for rec in recent_receipts:
+        recent_activity.append({
+            "title": f"Received from {rec.fund.person.name}",
+            "date": rec.received_at,
+            "type": "RECEIPT",
+            "amount_paise": rec.amount_paise,
+        })
+    recent_activity.sort(key=lambda x: x["date"], reverse=True)
 
     return render_template(
         "dashboard/index.html",
@@ -45,5 +68,6 @@ def index():
         pocket_money=pocket_money_paise,
         combined_bank_balance=combined_bank_paise,
         people_summaries=people_summaries,
-        recent_receipts=recent_receipts,
+        category_breakdown=category_breakdown,
+        recent_activity=recent_activity[:4],
     )

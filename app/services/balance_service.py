@@ -36,9 +36,18 @@ def get_fund_balance(fund_id: int, user_id: int) -> Dict[str, Any]:
         .scalar()
     )
 
-    # In Phase 2, expense allocations, pocket money transfers, and returns are 0
-    # Future phases will query allocations/settlements here seamlessly
-    spent_total = 0
+    # Sum of expense allocations funded by this fund
+    from app.models.expense_allocation import ExpenseAllocation
+    spent_total = (
+        db.session.query(func.coalesce(func.sum(ExpenseAllocation.allocated_amount_paise), 0))
+        .filter(
+            ExpenseAllocation.fund_id == fund_id,
+            ExpenseAllocation.source_type == "FUND",
+            ExpenseAllocation.user_id == user_id,
+        )
+        .scalar()
+    )
+
     transferred_to_pocket = 0
     returned_total = 0
 

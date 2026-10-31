@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}Transactions{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Transactions</h1>
+            <p class="page-subtitle">All your money in, money out, transfers and linked activities.</p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <a href="{{ url_for('receipts.new') }}" class="btn btn-outline-primary px-3 py-2" style="border-radius: var(--radius-md);">
+                <i class="bi bi-plus-circle me-1"></i> Receive Money
+            </a>
+            <a href="{{ url_for('expenses.new') }}" class="btn btn-primary-gradient px-3 py-2">
+                <i class="bi bi-dash-circle me-1"></i> Add Expense
+            </a>
+        </div>
+    </div>
+
+    <!-- Filter Bar (UI.png Layout) -->
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+        <!-- Tabs: All | Money In | Expenses | Transfers -->
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('expenses.index', tab='all') }}" class="btn btn-sm {% if current_tab == 'all' %}btn-primary-gradient{% else %}btn-outline-secondary{% endif %}" style="border-radius: var(--radius-pill);">
+                All Activities
+            </a>
+            <a href="{{ url_for('expenses.index', tab='money_in') }}" class="btn btn-sm {% if current_tab == 'money_in' %}btn-primary-gradient{% else %}btn-outline-secondary{% endif %}" style="border-radius: var(--radius-pill);">
+                <i class="bi bi-arrow-down-left me-1"></i> Money In
+            </a>
+            <a href="{{ url_for('expenses.index', tab='expenses') }}" class="btn btn-sm {% if current_tab == 'expenses' %}btn-primary-gradient{% else %}btn-outline-secondary{% endif %}" style="border-radius: var(--radius-pill);">
+                <i class="bi bi-cart3 me-1"></i> Expenses
+            </a>
+            <a href="{{ url_for('expenses.index', tab='transfers') }}" class="btn btn-sm {% if current_tab == 'transfers' %}btn-primary-gradient{% else %}btn-outline-secondary{% endif %}" style="border-radius: var(--radius-pill);">
+                <i class="bi bi-arrow-left-right me-1"></i> Transfers
+            </a>
+        </div>
+    </div>
+
+    <!-- Unified Transactions Table (UI.png Layout) -->
+    <div class="card-custom">
+        {% if activities %}
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr class="text-muted small">
+                        <th>Date & Time</th>
+                        <th>Description</th>
+                        <th>Type</th>
+                        <th>Category</th>
+                        <th>Linked To</th>
+                        <th class="text-end">Amount</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for a in activities %}
+                    <tr>
+                        <td class="small text-muted">{{ a.date.strftime('%d %b, %I:%M %p') }}</td>
+                        <td>
+                            <a href="{{ a.view_url }}" class="fw-semibold text-decoration-none text-reset">
+                                {{ a.description }}
+                            </a>
+                        </td>
+                        <td>
+                            {% if a.type == 'EXPENSE' %}
+                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle">
+                                <i class="bi bi-cart me-1"></i> Expense
+                            </span>
+                            {% elif a.type == 'RECEIPT' %}
+                            <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                <i class="bi bi-arrow-down-left me-1"></i> Money In
+                            </span>
+                            {% else %}
+                            <span class="badge bg-info-subtle text-info border border-info-subtle">
+                                <i class="bi bi-arrow-left-right me-1"></i> Transfer
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-secondary border">{{ a.category }}</span>
+                        </td>
+                        <td>
+                            <span class="small fw-semibold">{{ a.linked_to }}</span>
+                        </td>
+                        <td class="text-end fw-bold fs-6 {% if a.type == 'RECEIPT' %}text-success{% elif a.type == 'EXPENSE' %}text-danger{% else %}text-secondary{% endif %}">
+                            {% if a.type == 'RECEIPT' %}+{% else %}-{% endif %} {{ format_inr(a.amount_paise) }}
+                        </td>
+                        <td class="text-end">
+                            <a href="{{ a.view_url }}" class="btn btn-sm btn-outline-secondary" style="border-radius: var(--radius-sm);">
+                                Details
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5 text-muted">
+            <div class="display-6 mb-3"><i class="bi bi-journal-text"></i></div>
+            <h5 class="fw-bold">No transactions found</h5>
+            <p class="small mb-4">Start recording expenses or incoming money to see your ledger activity here.</p>
+            <div class="d-flex justify-content-center gap-2">
+                <a href="{{ url_for('receipts.new') }}" class="btn btn-outline-primary px-3 py-2">
+                    <i class="bi bi-plus-circle me-1"></i> Receive Money
+                </a>
+                <a href="{{ url_for('expenses.new') }}" class="btn btn-primary-gradient px-3 py-2">
+                    <i class="bi bi-dash-circle me-1"></i> Add Expense
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

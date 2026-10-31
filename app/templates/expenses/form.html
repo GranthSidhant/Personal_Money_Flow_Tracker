@@ -1,0 +1,262 @@
+{% extends "base.html" %}
+
+{% block title %}Add Expense{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0" style="max-width: 720px;">
+    <!-- Top Transaction Type Switcher matching UI.png Card 5 -->
+    <div class="d-flex justify-content-center mb-4">
+        <div class="p-1 rounded-pill d-inline-flex" style="background: var(--bg-card); border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
+            <a href="{{ url_for('expenses.new') }}" class="btn btn-sm btn-primary-gradient px-4 py-2" style="border-radius: var(--radius-pill);">
+                Expense
+            </a>
+            <a href="{{ url_for('receipts.new') }}" class="btn btn-sm btn-link text-decoration-none px-4 py-2 text-secondary" style="border-radius: var(--radius-pill);">
+                Money In
+            </a>
+            <a href="{{ url_for('bank_transactions.new') }}" class="btn btn-sm btn-link text-decoration-none px-4 py-2 text-secondary" style="border-radius: var(--radius-pill);">
+                Bank Transfer
+            </a>
+        </div>
+    </div>
+
+    <div class="card-custom">
+        <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+            <div>
+                <h4 class="fw-bold mb-1">Add Expense</h4>
+                <p class="text-muted small mb-0">Record a purchase and allocate which funds paid for it</p>
+            </div>
+            <a href="{{ url_for('expenses.index') }}" class="btn-icon" title="Close">
+                <i class="bi bi-x-lg"></i>
+            </a>
+        </div>
+
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <!-- Title & Amount -->
+            <div class="row g-3 mb-3">
+                <div class="col-sm-7">
+                    <label class="form-label-custom">Expense Title / Item *</label>
+                    <input type="text" name="title" class="form-control form-control-custom" placeholder="e.g. Groceries at D-Mart, Course Books" required>
+                </div>
+                <div class="col-sm-5">
+                    <label class="form-label-custom">Total Amount *</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0">₹</span>
+                        <input type="number" step="0.01" name="amount" id="total-amount-input" class="form-control form-control-custom border-start-0" placeholder="1000.00" required>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Category & Payment Account -->
+            <div class="row g-3 mb-3">
+                <div class="col-sm-6">
+                    <label class="form-label-custom">Category *</label>
+                    <select name="category_id" class="form-select form-control-custom" required>
+                        <option value="">-- Select Category --</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat.id }}">{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-sm-6">
+                    <label class="form-label-custom">Payment Account (Optional)</label>
+                    <select name="payment_account_id" class="form-select form-control-custom">
+                        <option value="0">-- None (Cash / Unlinked) --</option>
+                        {% for acc in bank_accounts %}
+                        <option value="{{ acc.id }}">{{ acc.account_nickname }} ({{ acc.bank_name }})</option>
+                        {% endfor %}
+                    </select>
+                    <small class="text-muted">Creates matching bank debit automatically.</small>
+                </div>
+            </div>
+
+            <!-- Funding Mode: Single Fund vs Multi-Split -->
+            <div class="p-3 rounded-3 mb-3" style="background: var(--bg-page); border: 1px solid var(--border-color);">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <label class="form-label-custom fw-bold mb-0">Funding Source & Allocation *</label>
+                    <div class="form-check form-switch mb-0">
+                        <input class="form-check-input" type="checkbox" id="split-mode-toggle" name="funding_mode" value="multi_split">
+                        <label class="form-check-label small fw-semibold" for="split-mode-toggle">Split across multiple sources</label>
+                    </div>
+                </div>
+
+                <!-- Single Fund Selection View -->
+                <div id="single-fund-container">
+                    <div class="mb-3">
+                        <label class="form-label-custom">From Fund / Person</label>
+                        <select name="fund_id" id="single-fund-select" class="form-select form-control-custom">
+                            <option value="">-- Select Entrusted Fund --</option>
+                            {% for f in funds %}
+                            <option value="{{ f.fund.id }}" data-balance="{{ f.available_paise }}">
+                                {{ f.display }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Shortfall Warning Banner -->
+                    <div id="shortfall-warning" class="alert alert-warning p-2 small mb-0 d-none">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <i class="bi bi-exclamation-triangle-fill text-warning"></i>
+                            <span class="fw-semibold">Fund balance is lower than total expense.</span>
+                        </div>
+                        <div class="text-muted mb-2">The remaining shortfall will be funded from your <strong>Pocket Money</strong>.</div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="shortfall_reimbursement" value="1" id="shortfall-reimb">
+                            <label class="form-check-label" for="shortfall-reimb">
+                                Reimbursement expected for personal shortfall
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Multi-Split Allocations Container -->
+                <div id="multi-split-container" class="d-none">
+                    <p class="small text-muted mb-2">Allocate exact portions from funds and/or personal pocket money. Total must match expense amount.</p>
+                    <div id="allocation-rows" class="d-flex flex-column gap-2 mb-3">
+                        <!-- Default Row 1 -->
+                        <div class="row g-2 align-items-center alloc-row">
+                            <div class="col-sm-4">
+                                <select name="split_source[]" class="form-select form-select-sm split-source-select">
+                                    <option value="FUND">Entrusted Fund</option>
+                                    <option value="POCKET_MONEY">Pocket Money</option>
+                                </select>
+                            </div>
+                            <div class="col-sm-4 fund-select-col">
+                                <select name="split_fund_id[]" class="form-select form-select-sm">
+                                    <option value="0">-- Select Fund --</option>
+                                    {% for f in funds %}
+                                    <option value="{{ f.fund.id }}">{{ f.fund.title }} ({{ f.fund.person.name }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-sm-3">
+                                <input type="number" step="0.01" name="split_amount[]" class="form-control form-control-sm split-amt-input" placeholder="Amount ₹">
+                            </div>
+                            <div class="col-sm-1 text-end">
+                                <button type="button" class="btn btn-sm btn-outline-danger remove-row-btn"><i class="bi bi-trash"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="add-split-row-btn">
+                        <i class="bi bi-plus me-1"></i> Add Another Source
+                    </button>
+                </div>
+            </div>
+
+            <!-- Date, Merchant, Description -->
+            <div class="row g-3 mb-3">
+                <div class="col-sm-6">
+                    <label class="form-label-custom">Date & Time</label>
+                    <input type="datetime-local" name="expense_at" class="form-control form-control-custom">
+                </div>
+                <div class="col-sm-6">
+                    <label class="form-label-custom">Merchant / Payee (Optional)</label>
+                    <input type="text" name="merchant" class="form-control form-control-custom" placeholder="e.g. D-Mart, Amazon, Local Chemist">
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label-custom">Description / Items</label>
+                <textarea name="description" class="form-control form-control-custom" rows="2" placeholder="Bought groceries for home..."></textarea>
+            </div>
+
+            <!-- Quick Pill Buttons matching UI.png Card 5 -->
+            <div class="d-flex flex-wrap gap-2 mb-4">
+                <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-3" style="border-radius: var(--radius-pill);">
+                    <i class="bi bi-mic me-1"></i> Add Voice Note
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-3" style="border-radius: var(--radius-pill);">
+                    <i class="bi bi-geo-alt me-1"></i> Add Location
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-3" style="border-radius: var(--radius-pill);">
+                    <i class="bi bi-receipt me-1"></i> Add Receipt
+                </button>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                <a href="{{ url_for('expenses.index') }}" class="btn btn-outline-secondary px-4 py-2" style="border-radius: var(--radius-md);">
+                    Cancel
+                </a>
+                <button type="submit" class="btn btn-primary-gradient px-4 py-2">
+                    Save Expense
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const splitToggle = document.getElementById("split-mode-toggle");
+        const singleContainer = document.getElementById("single-fund-container");
+        const multiContainer = document.getElementById("multi-split-container");
+        const amountInput = document.getElementById("total-amount-input");
+        const singleFundSelect = document.getElementById("single-fund-select");
+        const shortfallWarning = document.getElementById("shortfall-warning");
+        const allocationRows = document.getElementById("allocation-rows");
+        const addRowBtn = document.getElementById("add-split-row-btn");
+
+        // Toggle between Single Fund & Multi-Split
+        splitToggle.addEventListener("change", function() {
+            if (this.checked) {
+                singleContainer.classList.add("d-none");
+                multiContainer.classList.remove("d-none");
+            } else {
+                singleContainer.classList.remove("d-none");
+                multiContainer.classList.add("d-none");
+            }
+        });
+
+        // Check for fund shortfall in single mode
+        function checkShortfall() {
+            const total = parseFloat(amountInput.value) || 0;
+            const selectedOpt = singleFundSelect.options[singleFundSelect.selectedIndex];
+            if (selectedOpt && selectedOpt.dataset.balance) {
+                const balRupees = (parseInt(selectedOpt.dataset.balance) || 0) / 100;
+                if (total > balRupees) {
+                    shortfallWarning.classList.remove("d-none");
+                    return;
+                }
+            }
+            shortfallWarning.classList.add("d-none");
+        }
+
+        amountInput.addEventListener("input", checkShortfall);
+        singleFundSelect.addEventListener("change", checkShortfall);
+
+        // Add split row
+        addRowBtn.addEventListener("click", function() {
+            const firstRow = allocationRows.querySelector(".alloc-row");
+            const clone = firstRow.cloneNode(true);
+            clone.querySelector(".split-amt-input").value = "";
+            allocationRows.appendChild(clone);
+            bindRowEvents(clone);
+        });
+
+        function bindRowEvents(row) {
+            const srcSelect = row.querySelector(".split-source-select");
+            const fundCol = row.querySelector(".fund-select-col");
+            const removeBtn = row.querySelector(".remove-row-btn");
+
+            srcSelect.addEventListener("change", function() {
+                if (this.value === "POCKET_MONEY") {
+                    fundCol.classList.add("d-none");
+                } else {
+                    fundCol.classList.remove("d-none");
+                }
+            });
+
+            removeBtn.addEventListener("click", function() {
+                if (allocationRows.querySelectorAll(".alloc-row").length > 1) {
+                    row.remove();
+                }
+            });
+        }
+
+        allocationRows.querySelectorAll(".alloc-row").forEach(bindRowEvents);
+    });
+</script>
+{% endblock %}
