@@ -8,6 +8,7 @@ from app.routes.bank_transactions import bank_transactions_bp
 from app.routes.expenses import expenses_bp
 from app.routes.pocket_money import pocket_money_bp
 from app.routes.settlements import settlements_bp
+from app.routes.reports import reports_bp
 
 __all__ = [
     "auth_bp",
@@ -20,4 +21,5 @@ __all__ = [
     "expenses_bp",
     "pocket_money_bp",
     "settlements_bp",
+    "reports_bp",
 ]

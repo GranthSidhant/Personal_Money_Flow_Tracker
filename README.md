@@ -27,8 +27,8 @@ Refer to [`UI.png`](UI.png) for the baseline interface design, featuring:
 | **Phase 2** | People, Funds, and Receipts (Bank accounts, manual tx, unclassified tx, multi-receipt funds) | ✅ **Completed** |
 | **Phase 3** | Expenses and Allocations (Multi-fund split, personal contributions, overdraw prevention, Leaflet map) | ✅ **Completed** |
 | **Phase 4** | Pocket Money and Settlements (Ledger transfers, returns, reimbursements, atomic double entry) | ✅ **Completed** |
-| **Phase 5** | Dashboard and Reports (Dynamic calculation services, charts, filters, backup/export) | ⏳ Up Next |
-| **Phase 6** | Quick Voice Notes & Location (MediaRecorder, waveforms, optional geolocation) | ⏳ Pending |
+| **Phase 5** | Dashboard and Reports (Chart.js analytics, cashflow trend, Excel/CSV exports, JSON backup) | ✅ **Completed** |
+| **Phase 6** | Quick Voice Notes & Location (MediaRecorder, waveforms, optional geolocation) | ⏳ Up Next |
 | **Phase 7** | AI Transactions Inbox (Gemini extraction, provenance, manual approval) | ⏳ Pending |
 | **Phase 8** | PWA & Offline Drafts (Service Worker, IndexedDB sync queue, conflict resolution) | ⏳ Pending |
 | **Phase 9** | Production Hardening & Deployment (PostgreSQL, Gunicorn, HTTPS, audit) | ⏳ Pending |

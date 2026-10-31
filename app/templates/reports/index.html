@@ -1,0 +1,323 @@
+{% extends "base.html" %}
+
+{% block title %}Reports & Analytics{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Financial Reports & Analytics</h1>
+            <p class="page-subtitle">Cross-cutting insights, cashflow trends, fund utilization, and secure data exports.</p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <!-- Export Dropdown -->
+            <div class="dropdown">
+                <button class="btn btn-outline-primary dropdown-toggle px-3 py-2" type="button" data-bs-toggle="dropdown" style="border-radius: var(--radius-md);">
+                    <i class="bi bi-download me-1"></i> Export Data
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow-sm" style="border-radius: var(--radius-md);">
+                    <li>
+                        <a class="dropdown-item py-2" href="{{ url_for('reports.export_excel') }}">
+                            <i class="bi bi-file-earmark-excel text-success me-2"></i> Excel Workbook (.xlsx)
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item py-2" href="{{ url_for('reports.export_csv') }}">
+                            <i class="bi bi-file-earmark-text text-primary me-2"></i> Transactions CSV (.csv)
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item py-2" href="{{ url_for('reports.backup_json') }}">
+                            <i class="bi bi-shield-lock text-secondary me-2"></i> Full JSON Backup (.json)
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Restore Button -->
+            <button class="btn btn-primary-gradient px-3 py-2" data-bs-toggle="modal" data-bs-target="#restoreModal">
+                <i class="bi bi-cloud-arrow-up me-1"></i> Restore
+            </button>
+        </div>
+    </div>
+
+    <!-- Summary KPI Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-xl-3">
+            <div class="card-custom h-100">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted small fw-medium">Entrusted Money Remaining</span>
+                    <div class="btn-icon" style="background: rgba(99, 102, 241, 0.1); color: var(--primary);">
+                        <i class="bi bi-folder2"></i>
+                    </div>
+                </div>
+                <h4 class="fw-bold mb-0 text-primary">{{ format_inr(entrusted_total) }}</h4>
+                <small class="text-muted">Active third-party funds</small>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+            <div class="card-custom h-100">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted small fw-medium">Pocket Money Balance</span>
+                    <div class="btn-icon" style="background: rgba(16, 185, 129, 0.1); color: var(--success);">
+                        <i class="bi bi-wallet2"></i>
+                    </div>
+                </div>
+                <h4 class="fw-bold mb-0 text-success">{{ format_inr(pocket_info.current_balance_paise) }}</h4>
+                <small class="text-muted">Personal logical funds</small>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+            <div class="card-custom h-100">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted small fw-medium">Bank Accounts (Manual)</span>
+                    <div class="btn-icon" style="background: rgba(59, 130, 246, 0.1); color: var(--info);">
+                        <i class="bi bi-bank"></i>
+                    </div>
+                </div>
+                <h4 class="fw-bold mb-0 text-info">{{ format_inr(combined_bank) }}</h4>
+                <small class="text-muted">Tracked ledger total</small>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+            <div class="card-custom h-100">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted small fw-medium">Receivables Pending</span>
+                    <div class="btn-icon" style="background: rgba(245, 158, 11, 0.1); color: var(--warning);">
+                        <i class="bi bi-hourglass-split"></i>
+                    </div>
+                </div>
+                <h4 class="fw-bold mb-0 text-warning">{{ format_inr(receivables) }}</h4>
+                <small class="text-muted">Recoverable contributions owed</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart Grid -->
+    <div class="row g-4 mb-4">
+        <!-- Cashflow Trend Chart -->
+        <div class="col-lg-7">
+            <div class="card-custom h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h5 class="fw-bold mb-0">Monthly Cashflow Trend</h5>
+                        <p class="text-muted small mb-0">Money received vs expenses over the last 6 months</p>
+                    </div>
+                    <span class="badge bg-light text-secondary border px-2 py-1">6-Month View</span>
+                </div>
+                <div style="position: relative; height: 280px; width: 100%;">
+                    <canvas id="cashflowTrendChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Category Doughnut Chart -->
+        <div class="col-lg-5">
+            <div class="card-custom h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h5 class="fw-bold mb-0">Spending by Category</h5>
+                        <p class="text-muted small mb-0">Breakdown of purchases</p>
+                    </div>
+                    <span class="badge bg-light text-secondary border px-2 py-1">All Expenses</span>
+                </div>
+                {% if category_breakdown %}
+                <div style="position: relative; height: 220px; width: 100%;">
+                    <canvas id="categoryDonutChart"></canvas>
+                </div>
+                <div class="mt-3">
+                    {% for cat in category_breakdown[:4] %}
+                    <div class="d-flex justify-content-between align-items-center py-1 border-bottom" style="font-size: 0.85rem;">
+                        <span class="text-muted">{{ cat.name }}</span>
+                        <span class="fw-semibold text-main">{{ format_inr(cat.total_paise) }} ({{ cat.percentage }}%)</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-pie-chart fs-1 mb-2"></i>
+                    <p class="small mb-0">No categorized expenses recorded yet</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- People Balance & Receivables Summary -->
+    <div class="card-custom mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+            <div>
+                <h5 class="fw-bold mb-0">People & Entrusted Balances</h5>
+                <p class="text-muted small mb-0">Audit of who provided money and what remains</p>
+            </div>
+            <a href="{{ url_for('people.index') }}" class="btn btn-sm btn-outline-secondary" style="border-radius: var(--radius-sm);">
+                View All People
+            </a>
+        </div>
+
+        {% if people_summaries %}
+        <div class="table-responsive">
+            <table class="table-custom">
+                <thead>
+                    <tr>
+                        <th>Person</th>
+                        <th>Total Received</th>
+                        <th>Total Spent</th>
+                        <th>Remaining Entrusted</th>
+                        <th>Outstanding Receivable</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p_data in people_summaries %}
+                    <tr>
+                        <td>
+                            <a href="{{ url_for('people.detail', person_id=p_data.person.id) }}" class="fw-semibold text-decoration-none text-main">
+                                {{ p_data.person.name }}
+                            </a>
+                            <div class="small text-muted">{{ p_data.funds|length }} fund{% if p_data.funds|length != 1 %}s{% endif %}</div>
+                        </td>
+                        <td class="text-success fw-semibold">{{ format_inr(p_data.total_received_paise) }}</td>
+                        <td class="text-danger fw-semibold">{{ format_inr(p_data.total_spent_paise) }}</td>
+                        <td>
+                            <span class="badge {% if p_data.balance_paise > 0 %}bg-primary-subtle text-primary{% else %}bg-light text-muted{% endif %} px-2 py-1">
+                                {{ format_inr(p_data.balance_paise) }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if p_data.outstanding_receivable_paise > 0 %}
+                            <span class="badge bg-warning-subtle text-warning px-2 py-1">
+                                {{ format_inr(p_data.outstanding_receivable_paise) }}
+                            </span>
+                            {% else %}
+                            <span class="text-muted small">None</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <a href="{{ url_for('people.detail', person_id=p_data.person.id) }}" class="btn-icon btn-sm" title="Details">
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4 text-muted small">
+            No people records found. Add people and funds to generate person-wise reports.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Restore Modal -->
+<div class="modal fade" id="restoreModal" tabindex="-1" aria-labelledby="restoreModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: var(--radius-lg); border: 1px solid var(--border-color);">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-bold" id="restoreModalLabel">Restore Data Backup</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('reports.restore_json') }}" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body py-4">
+                    <p class="text-muted small mb-3">Upload a JSON backup file previously exported from your account to validate and inspect its entities.</p>
+                    <div class="mb-3">
+                        <label class="form-label-custom">Select Backup File (.json)</label>
+                        <input type="file" name="backup_file" accept=".json" class="form-control form-control-custom" required>
+                    </div>
+                </div>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-outline-secondary px-3" data-bs-dismiss="modal" style="border-radius: var(--radius-md);">Cancel</button>
+                    <button type="submit" class="btn btn-primary-gradient px-4">Validate & Restore</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // 1. Monthly Cashflow Trend Bar Chart
+    const trendCtx = document.getElementById("cashflowTrendChart");
+    if (trendCtx) {
+        new Chart(trendCtx.getContext("2d"), {
+            type: "bar",
+            data: {
+                labels: {{ trend_labels|tojson }},
+                datasets: [
+                    {
+                        label: "Money In (₹)",
+                        data: {{ trend_income|tojson }},
+                        backgroundColor: "#10b981",
+                        borderRadius: 6,
+                    },
+                    {
+                        label: "Expenses (₹)",
+                        data: {{ trend_expense|tojson }},
+                        backgroundColor: "#ef4444",
+                        borderRadius: 6,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: "top",
+                        labels: { boxWidth: 12, font: { family: "Outfit, Inter, sans-serif" } }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { callback: (val) => "₹" + val.toLocaleString("en-IN") }
+                    }
+                }
+            }
+        });
+    }
+
+    // 2. Category Doughnut Chart
+    const donutCtx = document.getElementById("categoryDonutChart");
+    if (donutCtx) {
+        const catLabels = {{ cat_labels|tojson }};
+        const catData = {{ cat_amounts|tojson }};
+        if (catLabels.length > 0) {
+            new Chart(donutCtx.getContext("2d"), {
+                type: "doughnut",
+                data: {
+                    labels: catLabels,
+                    datasets: [{
+                        data: catData,
+                        backgroundColor: [
+                            "#6366f1", "#10b981", "#f59e0b", "#ec4899",
+                            "#3b82f6", "#8b5cf6", "#14b8a6", "#f97316"
+                        ],
+                        borderWidth: 2,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    cutout: "70%"
+                }
+            });
+        }
+    }
+});
+</script>
+{% endblock %}
