@@ -30,8 +30,8 @@ Refer to [`UI.png`](UI.png) for the baseline interface design, featuring:
 | **Phase 5** | Dashboard and Reports (Chart.js analytics, cashflow trend, Excel/CSV exports, JSON backup) | ✅ **Completed** |
 | **Phase 6** | Quick Voice Notes & Location (MediaRecorder, waveforms, authenticated audio streaming, optional location) | ✅ **Completed** |
 | **Phase 7** | AI Transactions Inbox (Gemini API & local heuristic dual-mode, structured drafts, strict approval boundary, provenance) | ✅ **Completed** |
-| **Phase 8** | PWA & Offline Drafts (Service Worker, IndexedDB sync queue, conflict resolution) | ⏳ Up Next |
-| **Phase 9** | Production Hardening & Deployment (PostgreSQL, Gunicorn, HTTPS, audit) | ⏳ Pending |
+| **Phase 8** | PWA & Offline Drafts (Web App Manifest, Service Worker app-shell caching, IndexedDB draft queue, idempotent sync) | ✅ **Completed** |
+| **Phase 9** | Production Hardening & Deployment (PostgreSQL, Gunicorn, HTTPS, security audit) | ⏳ Up Next |
 
 ---
 

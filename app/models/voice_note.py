@@ -22,6 +22,7 @@ class VoiceNote(db.Model):
     status = db.Column(db.String(40), default="UNREVIEWED", nullable=False)  # UNREVIEWED, TRANSCRIBED, LINKED, ARCHIVED, REJECTED
     location_id = db.Column(db.Integer, db.ForeignKey("locations.id", ondelete="SET NULL"), nullable=True, index=True)
     linked_expense_id = db.Column(db.Integer, db.ForeignKey("expenses.id", ondelete="SET NULL"), nullable=True, index=True)
+    client_draft_id = db.Column(db.String(100), nullable=True, index=True)  # Idempotency key for offline sync
     created_at = db.Column(
         db.DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),

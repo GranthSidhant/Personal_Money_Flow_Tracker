@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block title %}Offline Mode - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-10 col-lg-8">
+            <!-- Offline Status Header -->
+            <div class="card-custom text-center py-4 mb-4" style="border-top: 4px solid var(--accent-amber);">
+                <div class="d-inline-flex p-3 rounded-circle bg-warning-subtle text-warning mb-3">
+                    <i class="bi bi-cloud-slash fs-1"></i>
+                </div>
+                <h2 class="h4 fw-bold text-main mb-2">You are currently offline</h2>
+                <p class="text-secondary small mb-3">
+                    Don't worry! You can still capture quick text memos and voice notes. They are saved securely on this device and will automatically sync when your internet connection returns.
+                </p>
+                <div class="d-flex justify-content-center gap-2">
+                    <button type="button" class="btn btn-outline-primary btn-sm px-3" onclick="syncPendingDrafts()">
+                        <i class="bi bi-arrow-repeat me-1"></i> Try Syncing Now
+                    </button>
+                    <a href="{{ url_for('dashboard.index') }}" class="btn btn-primary-gradient btn-sm px-3">
+                        <i class="bi bi-house me-1"></i> Return to Dashboard
+                    </a>
+                </div>
+            </div>
+
+            <!-- Offline Memo Creation Card -->
+            <div class="card-custom mb-4">
+                <h5 class="fw-bold mb-3 text-main">
+                    <i class="bi bi-pencil-square text-primary me-2"></i> Save Quick Offline Memo
+                </h5>
+                <form id="offlineMemoForm">
+                    <div class="mb-3">
+                        <label class="form-label-custom">Title / Reference</label>
+                        <input type="text" id="offlineTitle" class="form-control form-control-custom" placeholder="e.g. Taxi to Airport, Coffee with Rahul" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label-custom">Details / Note *</label>
+                        <textarea id="offlineNote" rows="3" class="form-control form-control-custom" placeholder="e.g. Paid ₹450 for taxi via cash" required></textarea>
+                    </div>
+                    <div class="d-flex justify-content-end">
+                        <button type="submit" class="btn btn-primary-gradient px-4 py-2">
+                            <i class="bi bi-save me-1"></i> Save to Offline Queue
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Local Drafts Queue Card -->
+            <div class="card-custom">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0 text-main">
+                        <i class="bi bi-inbox text-primary me-2"></i> Device Drafts Queue
+                    </h5>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="renderOfflineDraftsList()">
+                        <i class="bi bi-arrow-clockwise me-1"></i> Refresh
+                    </button>
+                </div>
+
+                <div id="offlineDraftsList" class="d-flex flex-column gap-2">
+                    <div class="text-center py-4 text-muted small">
+                        <span class="spinner-border spinner-border-sm me-2"></span> Loading device drafts...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    renderOfflineDraftsList();
+
+    const memoForm = document.getElementById('offlineMemoForm');
+    if (memoForm) {
+        memoForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const title = document.getElementById('offlineTitle').value.trim();
+            const text_note = document.getElementById('offlineNote').value.trim();
+
+            if (!text_note) return;
+
+            try {
+                await saveOfflineDraft({
+                    title: title || 'Quick Offline Note',
+                    text_note: text_note
+                });
+
+                document.getElementById('offlineTitle').value = '';
+                document.getElementById('offlineNote').value = '';
+                renderOfflineDraftsList();
+                alert('Saved to local offline queue!');
+            } catch (err) {
+                alert('Error saving offline draft: ' + err.message);
+            }
+        });
+    }
+
+    window.addEventListener('moneyflow:drafts-updated', renderOfflineDraftsList);
+});
+
+async function renderOfflineDraftsList() {
+    const container = document.getElementById('offlineDraftsList');
+    if (!container) return;
+
+    try {
+        const drafts = await getAllDrafts();
+        if (drafts.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-4 text-muted small">
+                    <i class="bi bi-check2-circle text-success fs-3 d-block mb-1"></i>
+                    No pending drafts on this device. Everything is synchronized!
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = drafts.map(d => `
+            <div class="p-3 border rounded-3 bg-light d-flex justify-content-between align-items-start gap-2">
+                <div class="text-truncate">
+                    <strong class="d-block text-main text-truncate">${escapeHtml(d.title)}</strong>
+                    <p class="text-secondary small mb-1 text-truncate" style="max-width: 400px;">
+                        ${escapeHtml(d.text_note || 'Voice recording')}
+                    </p>
+                    <span class="text-muted" style="font-size: 0.75rem;">
+                        Captured: ${new Date(d.captured_at).toLocaleString()}
+                    </span>
+                    ${d.sync_error ? `<span class="d-block text-danger small mt-1"><i class="bi bi-exclamation-triangle"></i> ${escapeHtml(d.sync_error)}</span>` : ''}
+                </div>
+                <div class="d-flex flex-column align-items-end gap-2">
+                    <span class="badge ${d.sync_status === 'SYNCED' ? 'bg-success text-white' : (d.sync_status === 'SYNCING' ? 'bg-primary text-white' : 'bg-warning text-dark')} px-2 py-1" style="font-size: 0.75rem;">
+                        ${d.sync_status}
+                    </span>
+                    <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2" style="font-size: 0.75rem;" onclick="removeDraft('${d.client_draft_id}')">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    } catch (err) {
+        container.innerHTML = `<div class="text-danger small">Error loading drafts: ${err.message}</div>`;
+    }
+}
+
+async function removeDraft(id) {
+    if (confirm('Delete this offline draft from device?')) {
+        await deleteOfflineDraft(id);
+        renderOfflineDraftsList();
+    }
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+</script>
+{% endblock %}

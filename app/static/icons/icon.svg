@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="brandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4f46e5" />
+      <stop offset="100%" stop-color="#7c3aed" />
+    </linearGradient>
+    <linearGradient id="coinGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+  </defs>
+  <!-- Background Rounded Squircle -->
+  <rect width="512" height="512" rx="128" fill="url(#brandGrad)" />
+  
+  <!-- Wallet Body -->
+  <rect x="96" y="144" width="320" height="232" rx="36" fill="#ffffff" opacity="0.95" />
+  <rect x="96" y="144" width="320" height="56" rx="28" fill="#e0e7ff" />
+  
+  <!-- Flap with Rupee Coin -->
+  <path d="M 280 200 L 416 200 C 430 200 440 212 440 226 L 440 294 C 440 308 430 320 416 320 L 280 320 C 264 320 252 308 252 292 L 252 228 C 252 212 264 200 280 200 Z" fill="url(#coinGrad)" />
+  
+  <!-- Rupee Symbol ₹ -->
+  <text x="344" y="278" font-family="system-ui, -apple-system, sans-serif" font-size="80" font-weight="900" fill="#ffffff" text-anchor="middle">₹</text>
+  
+  <!-- Flow Arrows (Source to Destination) -->
+  <path d="M 140 260 L 210 260 M 185 235 L 210 260 L 185 285" stroke="#4f46e5" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+</svg>
