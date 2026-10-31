@@ -114,13 +114,32 @@ export DATABASE_URL="postgresql://user:password@localhost:5432/money_flow_db"
 export UPLOAD_FOLDER="/var/lib/moneyflow/uploads"
 ```
 
-### 2. Running with Gunicorn
+### 2. Deploy to Vercel (Serverless + Cloud PostgreSQL)
+The repository is fully configured for zero-friction Vercel deployment with `vercel.json` and `api/index.py`:
+
+1. **Push your code to GitHub:**
+   ```bash
+   git push origin main
+   ```
+2. **Import into Vercel:**
+   - Log into [vercel.com](https://vercel.com) and click **"Add New" -> "Project"**.
+   - Select your GitHub repository (`Personal_Money_Flow_Tracker`).
+3. **Connect a Cloud Database:**
+   - In Vercel, go to the **Storage** tab and create a **Neon Postgres** database (Free tier).
+   - Vercel will automatically link your project and inject `POSTGRES_URL`.
+   - *Alternatively*, obtain a free PostgreSQL database from [Neon.tech](https://neon.tech) or [Supabase.com](https://supabase.com) and set `DATABASE_URL` in **Settings -> Environment Variables**.
+4. **Set Environment Variables in Vercel:**
+   - `SECRET_KEY`: A random 32+ character string.
+   - `AUTO_INIT_DB`: `true` (automatically creates all database tables on initial boot).
+   - `FLASK_ENV`: `production`
+5. **Deploy:** Click **Deploy**. Vercel will build and launch your application with automatic SSL and CDN distribution!
+
+### 3. Running on a VPS with Gunicorn & Nginx
 Run the production WSGI application with Gunicorn:
 ```bash
 gunicorn -w 4 -b 127.0.0.1:5000 wsgi:app
 ```
 
-### 3. Nginx Reverse Proxy with HTTPS
 ```nginx
 server {
     listen 443 ssl http2;

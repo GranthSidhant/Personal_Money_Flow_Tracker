@@ -14,23 +14,54 @@ class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", "dev-insecure-secret-key-change-in-production")
     
     # Handle PostgreSQL URL scheme fix for SQLAlchemy 2.0 (postgres:// -> postgresql://)
-    database_url = os.getenv("DATABASE_URL")
-    if database_url and database_url.startswith("postgres://"):
-        database_url = database_url.replace("postgres://", "postgresql://", 1)
-        
+    # Check DATABASE_URL, POSTGRES_URL (Vercel Postgres / Neon integration), or POSTGRES_URL_NON_POOLING
+    raw_db_url = (
+        os.getenv("DATABASE_URL")
+        or os.getenv("POSTGRES_URL")
+        or os.getenv("POSTGRES_URL_NON_POOLING")
+    )
+    if raw_db_url and raw_db_url.startswith("postgres://"):
+        raw_db_url = raw_db_url.replace("postgres://", "postgresql://", 1)
+    if raw_db_url and "sslmode=" not in raw_db_url and any(h in raw_db_url for h in ("neon.tech", "vercel-storage.com", "supabase.co", "render.com")):
+        raw_db_url += ("&" if "?" in raw_db_url else "?") + "sslmode=require"
+    database_url = raw_db_url
+
+    # Instance directory (safe fallback for serverless read-only environments like Vercel Lambda)
     instance_dir = BASE_DIR / "instance"
-    instance_dir.mkdir(exist_ok=True)
-    
+    try:
+        instance_dir.mkdir(exist_ok=True)
+    except OSError:
+        instance_dir = Path("/tmp/instance")
+        try:
+            instance_dir.mkdir(parents=True, exist_ok=True)
+        except OSError:
+            pass
+
     SQLALCHEMY_DATABASE_URI = database_url or f"sqlite:///{instance_dir / 'money_tracker.db'}"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    
+
     # Session and security cookies
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
-    
-    # Upload and media storage
-    UPLOAD_FOLDER = BASE_DIR / os.getenv("UPLOAD_FOLDER", "uploads")
-    UPLOAD_FOLDER.mkdir(exist_ok=True)
+
+    # Upload and media storage (safe for local dev, container, and serverless /tmp)
+    upload_env = os.getenv("UPLOAD_FOLDER")
+    if upload_env:
+        UPLOAD_FOLDER = Path(upload_env)
+    elif os.getenv("VERCEL"):
+        UPLOAD_FOLDER = Path("/tmp/uploads")
+    else:
+        UPLOAD_FOLDER = BASE_DIR / "uploads"
+
+    try:
+        UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        UPLOAD_FOLDER = Path("/tmp/uploads")
+        try:
+            UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)
+        except OSError:
+            pass
+
     MAX_CONTENT_LENGTH = int(os.getenv("MAX_CONTENT_LENGTH", 16 * 1024 * 1024))  # 16 MB max
 
 
