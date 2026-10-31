@@ -32,6 +32,7 @@ def create_app(config_name: str = None) -> Flask:
     from app.routes.pocket_money import pocket_money_bp
     from app.routes.settlements import settlements_bp
     from app.routes.reports import reports_bp
+    from app.routes.voice_notes import voice_notes_bp
     
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
@@ -44,6 +45,7 @@ def create_app(config_name: str = None) -> Flask:
     app.register_blueprint(pocket_money_bp)
     app.register_blueprint(settlements_bp)
     app.register_blueprint(reports_bp)
+    app.register_blueprint(voice_notes_bp)
 
     # Context processors for templates
     @app.context_processor

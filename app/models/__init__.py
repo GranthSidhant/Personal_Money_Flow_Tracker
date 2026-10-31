@@ -10,6 +10,8 @@ from app.models.expense import Expense
 from app.models.expense_allocation import ExpenseAllocation
 from app.models.settlement import Settlement
 from app.models.pocket_money_entry import PocketMoneyEntry
+from app.models.location import Location
+from app.models.voice_note import VoiceNote
 
 __all__ = [
     "User",
@@ -26,4 +28,6 @@ __all__ = [
     "ExpenseAllocation",
     "Settlement",
     "PocketMoneyEntry",
+    "Location",
+    "VoiceNote",
 ]

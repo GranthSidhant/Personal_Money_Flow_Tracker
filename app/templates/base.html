@@ -58,9 +58,9 @@
                     <i class="bi bi-check2-circle"></i>
                     <span>Settlements</span>
                 </a>
-                <a href="#voice-ai" class="nav-item-link">
+                <a href="{{ url_for('voice_notes.index') }}" class="nav-item-link {% if request.blueprint == 'voice_notes' %}active{% endif %}">
                     <i class="bi bi-mic"></i>
-                    <span>Voice Notes & AI</span>
+                    <span>Voice Notes</span>
                 </a>
                 <a href="{{ url_for('reports.index') }}" class="nav-item-link {% if request.blueprint == 'reports' %}active{% endif %}">
                     <i class="bi bi-file-earmark-bar-graph"></i>
@@ -165,7 +165,7 @@
             <i class="bi bi-bank"></i>
             <span>Banks</span>
         </a>
-        <a href="#voice-notes" class="mobile-nav-item">
+        <a href="{{ url_for('voice_notes.index') }}" class="mobile-nav-item {% if request.blueprint == 'voice_notes' %}active{% endif %}">
             <i class="bi bi-mic"></i>
             <span>Voice</span>
         </a>
