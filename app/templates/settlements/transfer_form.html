@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Transfer to Pocket Money{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0" style="max-width: 600px;">
+    <div class="card-custom">
+        <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+            <div>
+                <h4 class="fw-bold mb-1">Transfer to Pocket Money</h4>
+                <p class="text-muted small mb-0">Move unused entrusted fund money into Pocket Money with permission</p>
+            </div>
+            <a href="{{ url_for('settlements.index') }}" class="btn-icon" title="Close">
+                <i class="bi bi-x-lg"></i>
+            </a>
+        </div>
+
+        <div class="alert alert-info d-flex align-items-center gap-2 mb-4" style="border-radius: var(--radius-md);">
+            <i class="bi bi-info-circle-fill fs-5"></i>
+            <div class="small">
+                This internal movement creates paired entries atomically: reduces the fund's available balance and increases Pocket Money. It is not counted as external income.
+            </div>
+        </div>
+
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <!-- Source Fund -->
+            <div class="mb-3">
+                <label class="form-label-custom">Source Fund *</label>
+                <select name="fund_id" class="form-select form-control-custom" required>
+                    <option value="" disabled {% if not preselected_fund_id %}selected{% endif %}>Select an active fund</option>
+                    {% for item in funds %}
+                    <option value="{{ item.fund.id }}" {% if item.fund.id == preselected_fund_id %}selected{% endif %}>
+                        {{ item.display }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Amount -->
+            <div class="mb-3">
+                <label class="form-label-custom">Transfer Amount *</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-end-0">₹</span>
+                    <input type="number" step="0.01" min="0.01" name="amount" class="form-control form-control-custom ps-2" placeholder="0.00" required autofocus>
+                </div>
+                <small class="text-muted">Cannot exceed the fund's available balance.</small>
+            </div>
+
+            <!-- Notes -->
+            <div class="mb-3">
+                <label class="form-label-custom">Notes / Permission Context</label>
+                <input type="text" name="notes" class="form-control form-control-custom" placeholder="e.g. Permission given by Mother to keep remaining balance">
+            </div>
+
+            <!-- Date -->
+            <div class="mb-4">
+                <label class="form-label-custom">Date & Time</label>
+                <input type="datetime-local" name="settlement_at" class="form-control form-control-custom">
+            </div>
+
+            <div class="d-flex justify-content-end gap-2">
+                <a href="{{ url_for('settlements.index') }}" class="btn btn-outline-secondary px-4 py-2" style="border-radius: var(--radius-md);">
+                    Cancel
+                </a>
+                <button type="submit" class="btn btn-primary-gradient px-4 py-2">
+                    <i class="bi bi-check-circle me-1"></i> Confirm Transfer
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

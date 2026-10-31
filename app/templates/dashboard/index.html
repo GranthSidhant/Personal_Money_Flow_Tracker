@@ -74,15 +74,17 @@
 
         <!-- Pocket Money -->
         <div class="col-12 col-sm-6 col-xl-3">
-            <div class="stat-card">
-                <div>
-                    <div class="stat-label">Pocket Money</div>
-                    <div class="stat-value" id="stat-pocket" style="color: var(--pocket-money);">{{ format_inr(pocket_money) }}</div>
+            <a href="{{ url_for('pocket_money.index') }}" class="text-decoration-none">
+                <div class="stat-card">
+                    <div>
+                        <div class="stat-label">Pocket Money</div>
+                        <div class="stat-value" id="stat-pocket" style="color: var(--pocket-money);">{{ format_inr(pocket_money) }}</div>
+                    </div>
+                    <div class="stat-icon pocket">
+                        <i class="bi bi-cash-stack"></i>
+                    </div>
                 </div>
-                <div class="stat-icon pocket">
-                    <i class="bi bi-cash-stack"></i>
-                </div>
-            </div>
+            </a>
         </div>
     </div>
 

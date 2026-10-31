@@ -50,9 +50,13 @@
                     <i class="bi bi-bank"></i>
                     <span>Bank Accounts</span>
                 </a>
-                <a href="#pocket-money" class="nav-item-link">
-                    <i class="bi bi-piggy-bank"></i>
+                <a href="{{ url_for('pocket_money.index') }}" class="nav-item-link {% if request.blueprint == 'pocket_money' %}active{% endif %}">
+                    <i class="bi bi-wallet2"></i>
                     <span>Pocket Money</span>
+                </a>
+                <a href="{{ url_for('settlements.index') }}" class="nav-item-link {% if request.blueprint == 'settlements' %}active{% endif %}">
+                    <i class="bi bi-check2-circle"></i>
+                    <span>Settlements</span>
                 </a>
                 <a href="#voice-ai" class="nav-item-link">
                     <i class="bi bi-mic"></i>

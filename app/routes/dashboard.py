@@ -8,6 +8,7 @@ from app.models.bank_transaction import BankTransaction
 from app.services.balance_service import get_all_people_summaries, get_total_entrusted_balance
 from app.services.bank_balance_service import get_all_bank_accounts_summary, get_combined_bank_balances
 from app.services.allocation_service import get_spending_by_category
+from app.services.pocket_money_service import get_pocket_money_balance
 
 dashboard_bp = Blueprint("dashboard", __name__)
 
@@ -34,8 +35,8 @@ def index():
     people_summaries = get_all_people_summaries(current_user.id)
     category_breakdown = get_spending_by_category(current_user.id)
 
-    # In Phase 3: Pocket money is computed from transfers & personal contributions (expanded in Phase 4)
-    pocket_money_paise = 0
+    pocket_money_info = get_pocket_money_balance(current_user.id)
+    pocket_money_paise = pocket_money_info["current_balance_paise"]
 
     # Recent activity items for Dashboard
     recent_expenses = Expense.query.filter_by(user_id=current_user.id).order_by(Expense.expense_at.desc()).limit(3).all()

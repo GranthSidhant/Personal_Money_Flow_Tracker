@@ -48,8 +48,26 @@ def get_fund_balance(fund_id: int, user_id: int) -> Dict[str, Any]:
         .scalar()
     )
 
-    transferred_to_pocket = 0
-    returned_total = 0
+    from app.models.settlement import Settlement
+    transferred_to_pocket = (
+        db.session.query(func.coalesce(func.sum(Settlement.amount_paise), 0))
+        .filter(
+            Settlement.fund_id == fund_id,
+            Settlement.user_id == user_id,
+            Settlement.settlement_type == "TRANSFER_TO_POCKET",
+        )
+        .scalar()
+    )
+
+    returned_total = (
+        db.session.query(func.coalesce(func.sum(Settlement.amount_paise), 0))
+        .filter(
+            Settlement.fund_id == fund_id,
+            Settlement.user_id == user_id,
+            Settlement.settlement_type == "RETURN_TO_PROVIDER",
+        )
+        .scalar()
+    )
 
     balance_paise = receipts_total - spent_total - transferred_to_pocket - returned_total
 
@@ -69,7 +87,7 @@ def get_fund_balance(fund_id: int, user_id: int) -> Dict[str, Any]:
 
 def get_person_summary(person_id: int, user_id: int) -> Dict[str, Any]:
     """
-    Calculate person-level financial summary across all their funds.
+    Calculate person-level financial summary across all their funds and personal receivables.
     """
     person = Person.query.filter_by(id=person_id, user_id=user_id).first()
     if not person:
@@ -78,6 +96,9 @@ def get_person_summary(person_id: int, user_id: int) -> Dict[str, Any]:
             "total_received_paise": 0,
             "total_spent_paise": 0,
             "balance_paise": 0,
+            "transferred_to_pocket_paise": 0,
+            "returned_paise": 0,
+            "outstanding_receivable_paise": 0,
             "funds": [],
         }
 
@@ -86,6 +107,8 @@ def get_person_summary(person_id: int, user_id: int) -> Dict[str, Any]:
     total_received = 0
     total_spent = 0
     total_balance = 0
+    total_transferred = 0
+    total_returned = 0
 
     for fund in funds:
         f_bal = get_fund_balance(fund.id, user_id)
@@ -96,12 +119,21 @@ def get_person_summary(person_id: int, user_id: int) -> Dict[str, Any]:
         total_received += f_bal["receipts_total_paise"]
         total_spent += f_bal["spent_total_paise"]
         total_balance += f_bal["balance_paise"]
+        total_transferred += f_bal["transferred_to_pocket_paise"]
+        total_returned += f_bal["returned_paise"]
+
+    # Calculate personal contributions & receivables for this person
+    from app.services.settlement_service import get_outstanding_receivable
+    outstanding_receivable = get_outstanding_receivable(user_id, person_id)
 
     return {
         "person": person,
         "total_received_paise": total_received,
         "total_spent_paise": total_spent,
         "balance_paise": total_balance,
+        "transferred_to_pocket_paise": total_transferred,
+        "returned_paise": total_returned,
+        "outstanding_receivable_paise": outstanding_receivable,
         "funds": fund_summaries,
     }
 

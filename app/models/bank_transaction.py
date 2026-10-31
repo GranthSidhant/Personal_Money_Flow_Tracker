@@ -17,7 +17,7 @@ class BankTransaction(db.Model):
     category_id = db.Column(db.Integer, nullable=True)
     linked_receipt_id = db.Column(db.Integer, db.ForeignKey("receipts.id", ondelete="SET NULL"), nullable=True, index=True)
     linked_expense_id = db.Column(db.Integer, db.ForeignKey("expenses.id", ondelete="SET NULL"), nullable=True, index=True)
-    linked_settlement_id = db.Column(db.Integer, nullable=True)
+    linked_settlement_id = db.Column(db.Integer, db.ForeignKey("settlements.id", ondelete="SET NULL"), nullable=True, index=True)
     transfer_group_id = db.Column(db.String(64), nullable=True, index=True)  # Paired internal transfers
     classification_status = db.Column(db.String(30), default="UNCLASSIFIED", nullable=False)  # UNCLASSIFIED, CLASSIFIED, EXCLUDED
     notes = db.Column(db.Text, nullable=True)
@@ -38,6 +38,7 @@ class BankTransaction(db.Model):
     person = db.relationship("Person", back_populates="bank_transactions")
     linked_receipt = db.relationship("Receipt")
     linked_expense = db.relationship("Expense")
+    linked_settlement = db.relationship("Settlement", foreign_keys=[linked_settlement_id], back_populates="bank_transactions")
 
     @property
     def is_credit(self) -> bool:

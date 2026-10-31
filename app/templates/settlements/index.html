@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block title %}Settlements & Transfers{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Settlements & Transfers</h1>
+            <p class="page-subtitle">Track returns to providers, transfers of remaining balances to Pocket Money, and reimbursements.</p>
+        </div>
+        <div class="d-flex align-items-center flex-wrap gap-2">
+            <a href="{{ url_for('settlements.transfer_to_pocket') }}" class="btn btn-outline-primary px-3 py-2" style="border-radius: var(--radius-md);">
+                <i class="bi bi-box-arrow-in-down-left me-1"></i> Transfer to Pocket
+            </a>
+            <a href="{{ url_for('settlements.return_to_provider') }}" class="btn btn-outline-danger px-3 py-2" style="border-radius: var(--radius-md);">
+                <i class="bi bi-arrow-up-right me-1"></i> Return Money
+            </a>
+            <a href="{{ url_for('settlements.reimbursement') }}" class="btn btn-primary-gradient px-3 py-2">
+                <i class="bi bi-arrow-repeat me-1"></i> Record Reimbursement
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary Metrics -->
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-xl-3">
+            <div class="card-custom h-100">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted small fw-medium">Transferred to Pocket</span>
+                    <div class="btn-icon" style="background: rgba(99, 102, 241, 0.1); color: var(--primary);">
+                        <i class="bi bi-box-arrow-in-down-left"></i>
+                    </div>
+                </div>
+                <h4 class="fw-bold mb-0 text-primary">{{ format_inr(transfers_total) }}</h4>
+                <small class="text-muted">Unused entrusted balances kept</small>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+            <div class="card-custom h-100">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted small fw-medium">Returned to Provider</span>
+                    <div class="btn-icon" style="background: rgba(239, 68, 68, 0.1); color: var(--danger);">
+                        <i class="bi bi-arrow-up-right"></i>
+                    </div>
+                </div>
+                <h4 class="fw-bold mb-0 text-danger">{{ format_inr(returns_total) }}</h4>
+                <small class="text-muted">Refunded back to providers</small>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+            <div class="card-custom h-100">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted small fw-medium">Reimbursements Received</span>
+                    <div class="btn-icon" style="background: rgba(16, 185, 129, 0.1); color: var(--success);">
+                        <i class="bi bi-check2-circle"></i>
+                    </div>
+                </div>
+                <h4 class="fw-bold mb-0 text-success">{{ format_inr(reimbursements_total) }}</h4>
+                <small class="text-muted">Paid back by people</small>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+            <div class="card-custom h-100">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted small fw-medium">Pending Receivables</span>
+                    <div class="btn-icon" style="background: rgba(245, 158, 11, 0.1); color: var(--warning);">
+                        <i class="bi bi-hourglass-split"></i>
+                    </div>
+                </div>
+                <h4 class="fw-bold mb-0 text-warning">{{ format_inr(total_receivable) }}</h4>
+                <small class="text-muted">Personal recoverable spending</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Tabs -->
+    <div class="d-flex gap-2 mb-4 overflow-auto pb-1">
+        <a href="{{ url_for('settlements.index', type='ALL') }}" class="btn btn-sm {% if filter_type == 'ALL' %}btn-primary-gradient{% else %}btn-outline-secondary{% endif %}" style="border-radius: var(--radius-pill); padding: 0.4rem 1.25rem;">
+            All Settlements
+        </a>
+        <a href="{{ url_for('settlements.index', type='TRANSFER_TO_POCKET') }}" class="btn btn-sm {% if filter_type == 'TRANSFER_TO_POCKET' %}btn-primary-gradient{% else %}btn-outline-secondary{% endif %}" style="border-radius: var(--radius-pill); padding: 0.4rem 1.25rem;">
+            Transfers to Pocket
+        </a>
+        <a href="{{ url_for('settlements.index', type='RETURN_TO_PROVIDER') }}" class="btn btn-sm {% if filter_type == 'RETURN_TO_PROVIDER' %}btn-primary-gradient{% else %}btn-outline-secondary{% endif %}" style="border-radius: var(--radius-pill); padding: 0.4rem 1.25rem;">
+            Returns to Provider
+        </a>
+        <a href="{{ url_for('settlements.index', type='REIMBURSEMENT') }}" class="btn btn-sm {% if filter_type == 'REIMBURSEMENT' %}btn-primary-gradient{% else %}btn-outline-secondary{% endif %}" style="border-radius: var(--radius-pill); padding: 0.4rem 1.25rem;">
+            Reimbursements
+        </a>
+    </div>
+
+    <!-- Settlements Table -->
+    <div class="card-custom">
+        <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+            <h5 class="fw-bold mb-0">Settlement Records</h5>
+            <span class="text-muted small">{{ settlements|length }} settlements</span>
+        </div>
+
+        {% if settlements %}
+        <div class="table-responsive">
+            <table class="table-custom">
+                <thead>
+                    <tr>
+                        <th>Date & Time</th>
+                        <th>Type</th>
+                        <th>Person</th>
+                        <th>Related Record</th>
+                        <th>Notes</th>
+                        <th class="text-end">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in settlements %}
+                    <tr>
+                        <td>
+                            <div class="fw-medium text-main">{{ s.settlement_at.strftime('%d %b %Y') }}</div>
+                            <small class="text-muted">{{ s.settlement_at.strftime('%I:%M %p') }}</small>
+                        </td>
+                        <td>
+                            {% if s.settlement_type == 'TRANSFER_TO_POCKET' %}
+                            <span class="badge bg-primary-subtle text-primary px-2 py-1">Transfer to Pocket</span>
+                            {% elif s.settlement_type == 'RETURN_TO_PROVIDER' %}
+                            <span class="badge bg-danger-subtle text-danger px-2 py-1">Return to Provider</span>
+                            {% elif s.settlement_type == 'REIMBURSEMENT' %}
+                            <span class="badge bg-success-subtle text-success px-2 py-1">Reimbursement</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('people.detail', person_id=s.person.id) }}" class="fw-semibold text-decoration-none text-main">
+                                {{ s.person.name }}
+                            </a>
+                        </td>
+                        <td>
+                            {% if s.fund %}
+                            <a href="{{ url_for('funds.detail', fund_id=s.fund.id) }}" class="text-decoration-none small text-primary">
+                                <i class="bi bi-archive me-1"></i>{{ s.fund.title }}
+                            </a>
+                            {% elif s.related_expense %}
+                            <a href="{{ url_for('expenses.detail', expense_id=s.related_expense.id) }}" class="text-decoration-none small text-danger">
+                                <i class="bi bi-cart me-1"></i>{{ s.related_expense.title }}
+                            </a>
+                            {% else %}
+                            <span class="text-muted small">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="text-muted small">{{ s.notes or '—' }}</span>
+                        </td>
+                        <td class="text-end">
+                            <span class="fw-bold {% if s.settlement_type == 'RETURN_TO_PROVIDER' %}text-danger{% else %}text-success{% endif %}">
+                                {{ format_inr(s.amount_paise) }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-arrow-left-right text-muted" style="font-size: 3rem;"></i>
+            <h5 class="fw-semibold mt-3">No settlements recorded yet</h5>
+            <p class="text-muted small">Return unused money, record reimbursements, or transfer remaining fund balances to Pocket Money.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

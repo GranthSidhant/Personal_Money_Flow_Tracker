@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Record Reimbursement{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0" style="max-width: 600px;">
+    <div class="card-custom">
+        <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+            <div>
+                <h4 class="fw-bold mb-1">Record Reimbursement</h4>
+                <p class="text-muted small mb-0">Record money paid back to you for personal recoverable contributions</p>
+            </div>
+            <a href="{{ url_for('settlements.index') }}" class="btn-icon" title="Close">
+                <i class="bi bi-x-lg"></i>
+            </a>
+        </div>
+
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <!-- Person Selection -->
+            <div class="mb-3">
+                <label class="form-label-custom">Person Reimbursing *</label>
+                <select name="person_id" class="form-select form-control-custom" required>
+                    <option value="" disabled {% if not preselected_person_id %}selected{% endif %}>Select a person</option>
+                    {% for item in people %}
+                    <option value="{{ item.person.id }}" {% if item.person.id == preselected_person_id %}selected{% endif %}>
+                        {{ item.display }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Amount -->
+            <div class="mb-3">
+                <label class="form-label-custom">Reimbursement Amount *</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-end-0">₹</span>
+                    <input type="number" step="0.01" min="0.01" name="amount" class="form-control form-control-custom ps-2" placeholder="0.00" required autofocus>
+                </div>
+                <small class="text-muted">Cannot exceed the outstanding receivable for this person.</small>
+            </div>
+
+            <!-- Optional Received Into Bank Account -->
+            <div class="mb-3">
+                <label class="form-label-custom">Received into Bank Account (Optional)</label>
+                <select name="bank_account_id" class="form-select form-control-custom">
+                    <option value="">Received in Cash / Untracked</option>
+                    {% for acc in bank_accounts %}
+                    <option value="{{ acc.id }}">{{ acc.account_nickname }} ({{ acc.bank_name }})</option>
+                    {% endfor %}
+                </select>
+                <small class="text-muted">If selected, an atomic CREDIT bank transaction is linked.</small>
+            </div>
+
+            <!-- Notes -->
+            <div class="mb-3">
+                <label class="form-label-custom">Notes / Reference</label>
+                <input type="text" name="notes" class="form-control form-control-custom" placeholder="e.g. Paid back via GPay, Settled movie and grocery share">
+            </div>
+
+            <!-- Date -->
+            <div class="mb-4">
+                <label class="form-label-custom">Date & Time</label>
+                <input type="datetime-local" name="settlement_at" class="form-control form-control-custom">
+            </div>
+
+            <div class="d-flex justify-content-end gap-2">
+                <a href="{{ url_for('settlements.index') }}" class="btn btn-outline-secondary px-4 py-2" style="border-radius: var(--radius-md);">
+                    Cancel
+                </a>
+                <button type="submit" class="btn btn-primary-gradient px-4 py-2">
+                    <i class="bi bi-check-circle me-1"></i> Record Reimbursement
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

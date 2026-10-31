@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Add Pocket Money{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0" style="max-width: 600px;">
+    <div class="card-custom">
+        <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+            <div>
+                <h4 class="fw-bold mb-1">Add Pocket Money / Income</h4>
+                <p class="text-muted small mb-0">Record personal funds, allowance, or opening balance</p>
+            </div>
+            <a href="{{ url_for('pocket_money.index') }}" class="btn-icon" title="Close">
+                <i class="bi bi-x-lg"></i>
+            </a>
+        </div>
+
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <!-- Entry Type -->
+            <div class="mb-3">
+                <label class="form-label-custom">Type *</label>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <input type="radio" class="btn-check" name="entry_type" id="type_income" value="INCOME" checked>
+                        <label class="btn btn-outline-secondary w-100 py-2 text-center" for="type_income" style="border-radius: var(--radius-md);">
+                            <i class="bi bi-cash-stack me-1"></i> Personal Income / Allowance
+                        </label>
+                    </div>
+                    <div class="col-6">
+                        <input type="radio" class="btn-check" name="entry_type" id="type_opening" value="OPENING_BALANCE">
+                        <label class="btn btn-outline-secondary w-100 py-2 text-center" for="type_opening" style="border-radius: var(--radius-md);">
+                            <i class="bi bi-box-arrow-in-down me-1"></i> Opening Balance
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Amount -->
+            <div class="mb-3">
+                <label class="form-label-custom">Amount *</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-end-0">₹</span>
+                    <input type="number" step="0.01" min="0.01" name="amount" class="form-control form-control-custom ps-2" placeholder="0.00" required autofocus>
+                </div>
+            </div>
+
+            <!-- Description -->
+            <div class="mb-3">
+                <label class="form-label-custom">Description / Narration</label>
+                <input type="text" name="description" class="form-control form-control-custom" placeholder="e.g. Monthly stipend, Birthday gift, Cash in wallet">
+            </div>
+
+            <!-- Date -->
+            <div class="mb-4">
+                <label class="form-label-custom">Date & Time</label>
+                <input type="datetime-local" name="date" class="form-control form-control-custom">
+            </div>
+
+            <div class="d-flex justify-content-end gap-2">
+                <a href="{{ url_for('pocket_money.index') }}" class="btn btn-outline-secondary px-4 py-2" style="border-radius: var(--radius-md);">
+                    Cancel
+                </a>
+                <button type="submit" class="btn btn-primary-gradient px-4 py-2">
+                    <i class="bi bi-check-circle me-1"></i> Add to Pocket Money
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

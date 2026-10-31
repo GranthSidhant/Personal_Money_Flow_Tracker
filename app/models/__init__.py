@@ -8,6 +8,8 @@ from app.models.audit_event import AuditEvent
 from app.models.category import Category, DEFAULT_EXPENSE_CATEGORIES, ensure_default_categories
 from app.models.expense import Expense
 from app.models.expense_allocation import ExpenseAllocation
+from app.models.settlement import Settlement
+from app.models.pocket_money_entry import PocketMoneyEntry
 
 __all__ = [
     "User",
@@ -22,4 +24,6 @@ __all__ = [
     "ensure_default_categories",
     "Expense",
     "ExpenseAllocation",
+    "Settlement",
+    "PocketMoneyEntry",
 ]

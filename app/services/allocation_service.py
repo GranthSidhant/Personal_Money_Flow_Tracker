@@ -120,15 +120,34 @@ def record_expense_with_allocations(
     db.session.flush()
 
     for alloc in allocations_data:
+        p_id = alloc.get("person_id")
+        if not p_id and alloc.get("fund_id"):
+            f = Fund.query.filter_by(id=alloc["fund_id"], user_id=user_id).first()
+            if f:
+                p_id = f.person_id
+
         allocation_record = ExpenseAllocation(
             user_id=user_id,
             expense_id=expense.id,
             source_type=alloc["source_type"],
             fund_id=alloc.get("fund_id"),
+            person_id=p_id,
             allocated_amount_paise=int(alloc["allocated_amount_paise"]),
             reimbursement_expected=bool(alloc.get("reimbursement_expected", False)),
         )
         db.session.add(allocation_record)
+
+        if alloc["source_type"] == "POCKET_MONEY":
+            from app.models.pocket_money_entry import PocketMoneyEntry
+            pocket_entry = PocketMoneyEntry(
+                user_id=user_id,
+                entry_type="EXPENSE",
+                amount_paise=int(alloc["allocated_amount_paise"]),
+                description=f"Expense: {title.strip()}",
+                occurred_at=expense_at,
+                related_expense_id=expense.id,
+            )
+            db.session.add(pocket_entry)
 
     # Optional atomic bank debit
     if bank_account_id:

@@ -5,6 +5,9 @@ from app.routes.funds import funds_bp
 from app.routes.receipts import receipts_bp
 from app.routes.bank_accounts import bank_accounts_bp
 from app.routes.bank_transactions import bank_transactions_bp
+from app.routes.expenses import expenses_bp
+from app.routes.pocket_money import pocket_money_bp
+from app.routes.settlements import settlements_bp
 
 __all__ = [
     "auth_bp",
@@ -14,4 +17,7 @@ __all__ = [
     "receipts_bp",
     "bank_accounts_bp",
     "bank_transactions_bp",
+    "expenses_bp",
+    "pocket_money_bp",
+    "settlements_bp",
 ]

@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block title %}Pocket Money Ledger{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Pocket Money Ledger</h1>
+            <p class="page-subtitle">Your logical personal-money tracker: contributions, transfers, reimbursements, and personal spending.</p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <a href="{{ url_for('pocket_money.add') }}" class="btn btn-outline-primary px-3 py-2" style="border-radius: var(--radius-md);">
+                <i class="bi bi-plus-lg me-1"></i> Add Funds / Income
+            </a>
+            <a href="{{ url_for('settlements.transfer_to_pocket') }}" class="btn btn-outline-success px-3 py-2" style="border-radius: var(--radius-md);">
+                <i class="bi bi-box-arrow-in-down-left me-1"></i> Transfer From Fund
+            </a>
+            <a href="{{ url_for('pocket_money.adjust') }}" class="btn btn-outline-secondary px-3 py-2" style="border-radius: var(--radius-md);">
+                <i class="bi bi-sliders me-1"></i> Adjust Balance
+            </a>
+        </div>
+    </div>
+
+    <!-- Balance Hero Card -->
+    <div class="row g-3 mb-4">
+        <div class="col-lg-12">
+            <div class="card-custom text-white position-relative overflow-hidden" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                <div class="position-absolute" style="top: -20px; right: -20px; font-size: 10rem; opacity: 0.1; pointer-events: none;">
+                    <i class="bi bi-wallet2"></i>
+                </div>
+                <div class="position-relative z-1 p-2">
+                    <span class="badge bg-white text-success px-3 py-1 mb-2 fw-semibold" style="border-radius: var(--radius-pill); font-size: 0.8rem;">
+                        Logical Personal Ledger
+                    </span>
+                    <p class="text-white-50 mb-1 small text-uppercase fw-semibold tracking-wider">Current Pocket Money Balance</p>
+                    <h2 class="display-5 fw-bold mb-3 text-white">{{ format_inr(balance_info.current_balance_paise) }}</h2>
+                    <p class="mb-0 text-white-50 small">
+                        <i class="bi bi-info-circle me-1"></i> Pocket Money reflects your own personal money movements. It is not synchronized directly with any live bank account.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stat Breakdown Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-xl-3">
+            <div class="card-custom h-100">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted small fw-medium">Opening & Income</span>
+                    <div class="btn-icon" style="background: rgba(16, 185, 129, 0.1); color: var(--success);">
+                        <i class="bi bi-arrow-down-left"></i>
+                    </div>
+                </div>
+                <h4 class="fw-bold mb-0 text-success">{{ format_inr(balance_info.opening_balance_paise + balance_info.income_total_paise) }}</h4>
+                <small class="text-muted">Direct personal money added</small>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+            <div class="card-custom h-100">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted small fw-medium">Transferred from Funds</span>
+                    <div class="btn-icon" style="background: rgba(99, 102, 241, 0.1); color: var(--primary);">
+                        <i class="bi bi-box-arrow-in-down-left"></i>
+                    </div>
+                </div>
+                <h4 class="fw-bold mb-0 text-primary">{{ format_inr(balance_info.transfers_from_funds_paise) }}</h4>
+                <small class="text-muted">Unused entrusted money kept</small>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+            <div class="card-custom h-100">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted small fw-medium">Reimbursements</span>
+                    <div class="btn-icon" style="background: rgba(16, 185, 129, 0.1); color: var(--success);">
+                        <i class="bi bi-arrow-repeat"></i>
+                    </div>
+                </div>
+                <h4 class="fw-bold mb-0 text-success">{{ format_inr(balance_info.reimbursements_received_paise) }}</h4>
+                <small class="text-muted">Recovered from people</small>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+            <div class="card-custom h-100">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted small fw-medium">Expenses Funded</span>
+                    <div class="btn-icon" style="background: rgba(239, 68, 68, 0.1); color: var(--danger);">
+                        <i class="bi bi-dash-circle"></i>
+                    </div>
+                </div>
+                <h4 class="fw-bold mb-0 text-danger">{{ format_inr(balance_info.expenses_total_paise) }}</h4>
+                <small class="text-muted">Personal expenses & contributions</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ledger Entries Table -->
+    <div class="card-custom">
+        <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+            <h5 class="fw-bold mb-0">Ledger Entries</h5>
+            <span class="text-muted small">{{ entries|length }} movements recorded</span>
+        </div>
+
+        {% if entries %}
+        <div class="table-responsive">
+            <table class="table-custom">
+                <thead>
+                    <tr>
+                        <th>Date & Time</th>
+                        <th>Type</th>
+                        <th>Description / Origin</th>
+                        <th>Related Record</th>
+                        <th class="text-end">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in entries %}
+                    <tr>
+                        <td>
+                            <div class="fw-medium text-main">{{ entry.occurred_at.strftime('%d %b %Y') }}</div>
+                            <small class="text-muted">{{ entry.occurred_at.strftime('%I:%M %p') }}</small>
+                        </td>
+                        <td>
+                            {% if entry.entry_type == 'OPENING_BALANCE' %}
+                            <span class="badge bg-secondary-subtle text-secondary px-2 py-1">Opening</span>
+                            {% elif entry.entry_type == 'INCOME' %}
+                            <span class="badge bg-success-subtle text-success px-2 py-1">Income</span>
+                            {% elif entry.entry_type == 'FUND_TRANSFER' %}
+                            <span class="badge bg-primary-subtle text-primary px-2 py-1">Fund Transfer</span>
+                            {% elif entry.entry_type == 'REIMBURSEMENT' %}
+                            <span class="badge bg-info-subtle text-info px-2 py-1">Reimbursement</span>
+                            {% elif entry.entry_type == 'EXPENSE' %}
+                            <span class="badge bg-danger-subtle text-danger px-2 py-1">Expense</span>
+                            {% elif entry.entry_type == 'ADJUSTMENT_CREDIT' %}
+                            <span class="badge bg-success-subtle text-success px-2 py-1">Adj Credit</span>
+                            {% elif entry.entry_type == 'ADJUSTMENT_DEBIT' %}
+                            <span class="badge bg-warning-subtle text-warning px-2 py-1">Adj Debit</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="fw-semibold text-main">{{ entry.description }}</div>
+                            {% if entry.transfer_group_id %}
+                            <small class="text-muted font-monospace" style="font-size: 0.75rem;">Group: {{ entry.transfer_group_id[:8] }}...</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if entry.fund %}
+                            <a href="{{ url_for('funds.detail', fund_id=entry.fund.id) }}" class="text-decoration-none small text-primary">
+                                <i class="bi bi-archive me-1"></i>{{ entry.fund.title }}
+                            </a>
+                            {% elif entry.expense %}
+                            <a href="{{ url_for('expenses.detail', expense_id=entry.expense.id) }}" class="text-decoration-none small text-danger">
+                                <i class="bi bi-cart me-1"></i>{{ entry.expense.title }}
+                            </a>
+                            {% else %}
+                            <span class="text-muted small">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            {% if entry.is_credit %}
+                            <span class="fw-bold text-success">+{{ format_inr(entry.amount_paise) }}</span>
+                            {% else %}
+                            <span class="fw-bold text-danger">-{{ format_inr(entry.amount_paise) }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-wallet2 text-muted" style="font-size: 3rem;"></i>
+            <h5 class="fw-semibold mt-3">No Pocket Money movements yet</h5>
+            <p class="text-muted small">Add your opening balance or record an expense funded from Pocket Money.</p>
+            <a href="{{ url_for('pocket_money.add') }}" class="btn btn-primary-gradient px-4 py-2 mt-2">
+                <i class="bi bi-plus-lg me-1"></i> Add Pocket Money
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
