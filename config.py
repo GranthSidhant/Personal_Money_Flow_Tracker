@@ -9,34 +9,67 @@ BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(BASE_DIR / ".env")
 
 
-class Config:
-    """Base application configuration."""
-    SECRET_KEY = os.getenv("SECRET_KEY", "dev-insecure-secret-key-change-in-production")
-    
-    # Handle PostgreSQL URL scheme fix for SQLAlchemy 2.0 (postgres:// -> postgresql://)
-    # Check DATABASE_URL, POSTGRES_URL (Vercel Postgres / Neon integration), or POSTGRES_URL_NON_POOLING
-    raw_db_url = (
-        os.getenv("DATABASE_URL")
-        or os.getenv("POSTGRES_URL")
-        or os.getenv("POSTGRES_URL_NON_POOLING")
-    )
-    if raw_db_url and raw_db_url.startswith("postgres://"):
-        raw_db_url = raw_db_url.replace("postgres://", "postgresql://", 1)
-    if raw_db_url and "sslmode=" not in raw_db_url and any(h in raw_db_url for h in ("neon.tech", "vercel-storage.com", "supabase.co", "render.com")):
-        raw_db_url += ("&" if "?" in raw_db_url else "?") + "sslmode=require"
+import re
+from sqlalchemy.engine import make_url
 
-    # If raw_db_url is postgresql://, verify if psycopg2 is available; otherwise fallback to pure-python pg8000
-    if raw_db_url and raw_db_url.startswith("postgresql://"):
+
+def clean_database_url(raw_url: str | None) -> str | None:
+    """
+    Sanitize database URLs to prevent SQLAlchemy ArgumentError.
+    Handles quotes, psql command wrappers, assignment syntax, and URL scheme normalization.
+    """
+    if not raw_url:
+        return None
+
+    url = str(raw_url).strip().strip('"').strip("'").strip()
+    if not url or url.lower() in ("none", "null", "undefined"):
+        return None
+
+    # Search for an embedded postgresql://, postgres://, or sqlite:/// URI
+    match = re.search(r"((?:postgres(?:ql)?|sqlite)://[^\s'\"]+)", url)
+    if match:
+        url = match.group(1).rstrip("'\"")
+
+    # SQLAlchemy 2.0 requires postgresql:// instead of postgres://
+    if url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql://", 1)
+
+    # Automatically attach sslmode=require for common managed PostgreSQL clouds
+    if url.startswith("postgresql://") and "sslmode=" not in url:
+        if any(h in url for h in ("neon.tech", "vercel-storage.com", "supabase.co", "render.com", "aws")):
+            url += ("&" if "?" in url else "?") + "sslmode=require"
+
+    # Fallback to pure-Python pg8000 if psycopg2 is missing
+    if url.startswith("postgresql://"):
         try:
             import psycopg2  # noqa
         except Exception:
             try:
                 import pg8000  # noqa
-                raw_db_url = raw_db_url.replace("postgresql://", "postgresql+pg8000://", 1)
+                url = url.replace("postgresql://", "postgresql+pg8000://", 1)
             except Exception:
                 pass
 
-    database_url = raw_db_url
+    # Verify that SQLAlchemy can parse it safely
+    try:
+        make_url(url)
+        return url
+    except Exception as ex:
+        print(f"[WARNING] Database URL validation failed: {ex}. Falling back to SQLite.")
+        return None
+
+
+class Config:
+    """Base application configuration."""
+    SECRET_KEY = os.getenv("SECRET_KEY", "dev-insecure-secret-key-change-in-production")
+
+    # Clean and validate cloud PostgreSQL URI
+    raw_env_url = (
+        os.getenv("DATABASE_URL")
+        or os.getenv("POSTGRES_URL")
+        or os.getenv("POSTGRES_URL_NON_POOLING")
+    )
+    database_url = clean_database_url(raw_env_url)
 
     # Instance directory (safe fallback for serverless read-only environments like Vercel Lambda)
     instance_dir = BASE_DIR / "instance"

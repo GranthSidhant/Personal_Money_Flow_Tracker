@@ -14,6 +14,18 @@ def create_app(config_name: str = None) -> Flask:
     config_class = config_by_name.get(config_name, config_by_name["default"])
     app.config.from_object(config_class)
 
+    # Dynamically sanitize and re-apply DATABASE_URL from runtime environment
+    from config import clean_database_url
+    raw_env = (
+        os.getenv("DATABASE_URL")
+        or os.getenv("POSTGRES_URL")
+        or os.getenv("POSTGRES_URL_NON_POOLING")
+    )
+    if raw_env:
+        cleaned_db = clean_database_url(raw_env)
+        if cleaned_db:
+            app.config["SQLALCHEMY_DATABASE_URI"] = cleaned_db
+
     # Initialize extensions
     db.init_app(app)
     migrate.init_app(app, db)
