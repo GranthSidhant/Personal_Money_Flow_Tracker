@@ -2,7 +2,7 @@ import os
 import sys
 import traceback
 from pathlib import Path
-from flask import Flask
+from flask import Flask, request, jsonify
 
 # Add project root directory to sys.path so 'app' and 'config' can be imported
 ROOT_DIR = Path(__file__).resolve().parent.parent
@@ -16,12 +16,27 @@ try:
     # Vercel requires 'app' to be an instance of Flask (hasattr wsgi_app)
     app = create_app(os.getenv("FLASK_ENV", "production"))
 
+    # Add a zero-dependency health endpoint for instant diagnostic verification
+    @app.route("/api/health")
+    def health_check():
+        db_configured = bool(os.getenv("DATABASE_URL") or os.getenv("POSTGRES_URL"))
+        return jsonify({
+            "status": "online",
+            "service": "Personal Money Flow Tracker",
+            "python_version": sys.version,
+            "database_configured": db_configured,
+        })
+
     # Lazy initialization flag: run once on first incoming HTTP request, NEVER during cold-start module load
     _db_initialized = False
 
     @app.before_request
     def lazy_db_init():
         global _db_initialized
+        # Skip DB check on health probe and static assets to prevent timeouts
+        if request.path in ("/api/health", "/manifest.json", "/sw.js") or request.path.startswith("/static"):
+            return None
+
         if not _db_initialized:
             _db_initialized = True
             if os.getenv("AUTO_INIT_DB", "true").lower() in ("true", "1", "yes"):
@@ -35,6 +50,10 @@ except Exception:
 
     # Create a fallback Flask instance so Vercel's WSGI detection NEVER fails with 500 FUNCTION_INVOCATION_FAILED
     app = Flask(__name__)
+
+    @app.route("/api/health")
+    def fallback_health():
+        return jsonify({"status": "error", "error": err_trace}), 500
 
     @app.route("/", defaults={"path": ""})
     @app.route("/<path:path>")

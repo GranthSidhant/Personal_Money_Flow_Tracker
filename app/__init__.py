@@ -68,17 +68,36 @@ def create_app(config_name: str = None) -> Flask:
             response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         return response
 
-    # Error handlers
+    # Error handlers with resilient fallbacks for serverless deployments
     @app.errorhandler(404)
     def page_not_found(e):
-        return render_template("errors/404.html"), 404
+        try:
+            return render_template("errors/404.html"), 404
+        except Exception:
+            return "<h1>404 Not Found</h1>", 404
 
     @app.errorhandler(403)
     def forbidden(e):
-        return render_template("errors/403.html"), 403
+        try:
+            return render_template("errors/403.html"), 403
+        except Exception:
+            return "<h1>403 Forbidden</h1>", 403
 
     @app.errorhandler(500)
     def internal_server_error(e):
-        return render_template("errors/500.html"), 500
+        import traceback
+        tb = traceback.format_exc()
+        app.logger.error(f"500 Internal Error: {e}\n{tb}")
+        try:
+            return render_template("errors/500.html"), 500
+        except Exception:
+            return (
+                f"<!DOCTYPE html><html><head><title>500 Internal Error</title></head>"
+                f"<body style='font-family:-apple-system,sans-serif;padding:2rem;background:#0f172a;color:#f8fafc;'>"
+                f"<h1 style='color:#ef4444;'>500 Server Error</h1>"
+                f"<p>{e}</p><pre style='background:#1e293b;padding:1rem;border-radius:8px;color:#f87171;overflow:auto;'>{tb}</pre>"
+                f"</body></html>",
+                500,
+            )
 
     return app
