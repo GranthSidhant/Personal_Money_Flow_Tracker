@@ -1,10 +1,23 @@
 import os
+import sys
+from flask import jsonify
 from app import create_app
 from app.extensions import db
 
-# WSGI application entrypoint for Gunicorn, Docker, and serverless runtimes
+# WSGI application entrypoint for Gunicorn, Docker, and Vercel serverless runtime
 environment = os.getenv("FLASK_ENV", "production")
 app = create_app(environment)
+
+# Zero-dependency health endpoint for instant diagnostic verification
+@app.route("/api/health")
+def health_check():
+    db_configured = bool(os.getenv("DATABASE_URL") or os.getenv("POSTGRES_URL"))
+    return jsonify({
+        "status": "online",
+        "service": "Personal Money Flow Tracker",
+        "python_version": sys.version,
+        "database_configured": db_configured,
+    })
 
 # Lazy DB initialization on first request
 _db_initialized = False
