@@ -61,6 +61,19 @@ def create_app(config_name: str = None) -> Flask:
     app.register_blueprint(voice_notes_bp)
     app.register_blueprint(sync_bp)
 
+    # Universal diagnostic health check endpoint
+    @app.route("/api/health")
+    def health_check():
+        import sys
+        from flask import jsonify
+        db_configured = bool(os.getenv("DATABASE_URL") or os.getenv("POSTGRES_URL"))
+        return jsonify({
+            "status": "online",
+            "service": "Personal Money Flow Tracker",
+            "python_version": sys.version,
+            "database_configured": db_configured,
+        })
+
     # Context processors for templates
     @app.context_processor
     def inject_utilities():
