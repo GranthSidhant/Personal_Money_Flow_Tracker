@@ -13,10 +13,23 @@ import re
 from sqlalchemy.engine import make_url
 
 
+def test_driver(candidate_url: str) -> bool:
+    """Check if the dialect and driver for the given URL can be imported without errors."""
+    try:
+        u = make_url(candidate_url)
+        dialect_cls = u.get_dialect()
+        if hasattr(dialect_cls, "import_dbapi"):
+            dialect_cls.import_dbapi()
+        return True
+    except Exception:
+        return False
+
+
 def clean_database_url(raw_url: str | None) -> str | None:
     """
-    Sanitize database URLs to prevent SQLAlchemy ArgumentError.
+    Sanitize database URLs to prevent SQLAlchemy ArgumentError and missing driver crashes.
     Handles quotes, psql command wrappers, assignment syntax, and URL scheme normalization.
+    Automatically resolves to an installed, working PostgreSQL driver (psycopg, psycopg2, or pg8000).
     """
     if not raw_url:
         return None
@@ -25,8 +38,8 @@ def clean_database_url(raw_url: str | None) -> str | None:
     if not url or url.lower() in ("none", "null", "undefined"):
         return None
 
-    # Search for an embedded postgresql://, postgres://, or sqlite:/// URI
-    match = re.search(r"((?:postgres(?:ql)?|sqlite)://[^\s'\"]+)", url)
+    # Search for an embedded postgresql://, postgres://, or sqlite:/// URI (including driver qualifiers)
+    match = re.search(r"((?:postgres(?:ql)?(?:\+[a-zA-Z0-9_-]+)?|sqlite)://[^\s'\"]+)", url)
     if match:
         url = match.group(1).rstrip("'\"")
 
@@ -35,22 +48,32 @@ def clean_database_url(raw_url: str | None) -> str | None:
         url = url.replace("postgres://", "postgresql://", 1)
 
     # Automatically attach sslmode=require for common managed PostgreSQL clouds
-    if url.startswith("postgresql://") and "sslmode=" not in url:
+    if "postgresql" in url and "sslmode=" not in url:
         if any(h in url for h in ("neon.tech", "vercel-storage.com", "supabase.co", "render.com", "aws")):
             url += ("&" if "?" in url else "?") + "sslmode=require"
 
-    # Fallback to pure-Python pg8000 if psycopg2 is missing
-    if url.startswith("postgresql://"):
-        try:
-            import psycopg2  # noqa
-        except Exception:
-            try:
-                import pg8000  # noqa
-                url = url.replace("postgresql://", "postgresql+pg8000://", 1)
-            except Exception:
-                pass
+    # For PostgreSQL URLs, ensure that the selected driver is actually installed and functional
+    if url.startswith("postgresql"):
+        # First, test if the requested URL scheme works as-is
+        if test_driver(url):
+            return url
 
-    # Verify that SQLAlchemy can parse it safely
+        # If not, attempt fallback to working drivers in order: psycopg (v3) -> psycopg2 -> pure-Python pg8000
+        base_url = re.sub(r"^postgresql(?:\+[a-zA-Z0-9_-]+)?://", "postgresql://", url)
+        candidates = [
+            base_url.replace("postgresql://", "postgresql+psycopg://", 1),
+            base_url.replace("postgresql://", "postgresql+psycopg2://", 1),
+            base_url.replace("postgresql://", "postgresql+pg8000://", 1),
+            base_url,
+        ]
+        for cand in candidates:
+            if test_driver(cand):
+                return cand
+
+        print("[WARNING] No working PostgreSQL driver available (psycopg, psycopg2, pg8000). Falling back to SQLite.")
+        return None
+
+    # Verify that SQLAlchemy can parse non-Postgres URLs (e.g. sqlite) safely
     try:
         make_url(url)
         return url
@@ -72,9 +95,12 @@ class Config:
     database_url = clean_database_url(raw_env_url)
 
     # Instance directory (safe fallback for serverless read-only environments like Vercel Lambda)
-    instance_dir = BASE_DIR / "instance"
+    if os.getenv("VERCEL"):
+        instance_dir = Path("/tmp/instance")
+    else:
+        instance_dir = BASE_DIR / "instance"
     try:
-        instance_dir.mkdir(exist_ok=True)
+        instance_dir.mkdir(parents=True, exist_ok=True)
     except OSError:
         instance_dir = Path("/tmp/instance")
         try:
